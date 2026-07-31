@@ -46,15 +46,41 @@ after pops's 2 manual actions: rebuild, then publish an actual GitHub Release wi
 installer attached — v0.1.0 itself won't "update" anything (it's the first version), but a real
 release needs to exist for any future version bump to be detected as an update at all.
 
-**Committed and pushed** (`ceee85b`, "Build a real installer; wire up auto-update
-(electron-updater)") to `adminpops/pops-suite-electron-shell` — pops flipped the repo to public
-himself (confirmed via `gh repo view`), ran out of time before finishing `npm install`. **Blocked:**
-`npm install` still hasn't actually completed (File Explorer → right-click → "Open in Terminal" →
-`npm install`, in progress when the session paused). **Next session:** finish that install, verify
-`electron-updater` actually loads (`node --check` already passed, but the package itself isn't on
-disk yet so it's never been run for real), rebuild, then publish the first real GitHub Release —
-v0.1.0 won't "update" anything itself, but a release needs to exist for any future version bump to
-be detectable at all.
+**Committed and pushed** (`ceee85b`, `78ec76d`) to `adminpops/pops-suite-electron-shell` — pops
+flipped the repo to public himself (confirmed via `gh repo view`).
+
+## 2026-07-31 (continued) — npm install finished, real release published, thread closed out
+
+Pops hit two real snags getting `npm install` to run himself: PowerShell's script execution policy
+blocked `npm` outright (`npm.ps1 cannot be loaded because running scripts is disabled` —
+`npm.cmd install` sidesteps it without touching any system security setting) and the terminal
+opened in the wrong folder twice before landing in `Electron Shell\`. Real errors captured via
+screenshots, walked through live.
+
+**`npm install` succeeded** — 9 packages added. `npm audit --production` (the only tree that
+actually ships inside the customer's app) showed **zero vulnerabilities** — the 13 flagged in the
+full audit (12 high, 1 critical) all live in `electron-builder`'s own build-tooling devDependency
+tree, never touch what a customer receives. Worth knowing, not worth fixing.
+
+**Rebuilt with `electron-updater` actually bundled** (`app.asar` regenerated, ~2.1MB) and
+**verified live** — killed the old running instance, relaunched the freshly-built exe, confirmed
+real processes started clean, no crash.
+
+**Published the real GitHub Release**, `v0.1.0` — tag pushed, installer uploaded as a release
+asset (not a draft): `https://github.com/adminpops/pops-suite-electron-shell/releases/download/
+v0.1.0/PoPs.Suite.Setup.0.1.0.exe`. **Real practical finding:** this download link is what should
+actually go in the PoPs House fulfillment email, NOT an attached file — the installer is ~80MB and
+Gmail's own attachment cap is 25MB, so a direct attachment would have silently failed. A link has
+no such limit.
+
+**This is now a genuinely complete, working delivery pipeline for CBM specifically:** real
+installer, real auto-update mechanism with something to check against, real public download link
+ready to hand to PoPs House for the upcoming client demo/trial. **Not done:** code-signing
+(SmartScreen warning still shows on first run), CTC/PoPs Estimating aren't wrapped, no app icon set
+(uses Electron's default).
+
+**Blocked:** none. **Next:** pops's call — send this to PoPs House for the actual demo, buy
+code-signing certs, or wrap another module.
 
 ---
 
