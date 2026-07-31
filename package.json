@@ -8,6 +8,10 @@
     "start": "electron .",
     "dist": "electron-builder"
   },
+  "author": "PoPs Suite",
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  },
   "devDependencies": {
     "electron": "^32.0.0",
     "electron-builder": "^25.0.0"
@@ -20,10 +24,20 @@
       "preload.js"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "signAndEditExecutable": false
     },
     "mac": {
       "target": "dmg"
+    },
+    "nsis": {
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "adminpops",
+      "repo": "pops-suite-electron-shell"
     }
   },
   "allowScripts": {

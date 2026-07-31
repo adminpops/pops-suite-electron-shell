@@ -13,8 +13,33 @@
 // touch Node/filesystem APIs at all, so it doesn't get the ability to.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
+const { autoUpdater } = require('electron-updater');
+
+// Checks GitHub Releases on this repo (adminpops/pops-suite-electron-shell — public, see
+// package.json's own build.publish block) for a newer version, downloads it in the background,
+// and prompts to restart once it's ready. Repo has no real secrets/IP in it (D-052 keeps all of
+// that server-side), so no auth token is needed to read its public releases — the customer-facing
+// app never embeds any credential.
+function checkForUpdates() {
+  autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+    // Never block the app over a failed update check (no internet, GitHub down, etc.) — this is
+    // a background convenience, not something that should interrupt someone trying to work.
+    console.error('Update check failed (non-fatal):', err.message);
+  });
+}
+
+autoUpdater.on('update-downloaded', () => {
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Update ready',
+    message: 'A new version of PoPs Suite has been downloaded. Restart now to apply it?',
+    buttons: ['Restart now', 'Later'],
+  }).then((result) => {
+    if (result.response === 0) autoUpdater.quitAndInstall();
+  });
+});
 
 // Swap per app when this shell wraps CTC/PoPs Estimating too — one shell, one URL constant,
 // same as every other module's own _WS_ENGINE_SERVER/_EST_ENGINE_SERVER pointer pattern.
@@ -52,6 +77,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+  checkForUpdates();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
