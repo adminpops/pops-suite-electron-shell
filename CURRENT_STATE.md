@@ -46,9 +46,15 @@ after pops's 2 manual actions: rebuild, then publish an actual GitHub Release wi
 installer attached — v0.1.0 itself won't "update" anything (it's the first version), but a real
 release needs to exist for any future version bump to be detected as an update at all.
 
-**Not committed, not deployed.** **Blocked:** on pops (a) flipping repo visibility, (b) running
-`npm install`. **Next:** once both are done, rebuild + verify the updater code actually loads, then
-create the real GitHub Release, then pops's call on committing.
+**Committed and pushed** (`ceee85b`, "Build a real installer; wire up auto-update
+(electron-updater)") to `adminpops/pops-suite-electron-shell` — pops flipped the repo to public
+himself (confirmed via `gh repo view`), ran out of time before finishing `npm install`. **Blocked:**
+`npm install` still hasn't actually completed (File Explorer → right-click → "Open in Terminal" →
+`npm install`, in progress when the session paused). **Next session:** finish that install, verify
+`electron-updater` actually loads (`node --check` already passed, but the package itself isn't on
+disk yet so it's never been run for real), rebuild, then publish the first real GitHub Release —
+v0.1.0 won't "update" anything itself, but a release needs to exist for any future version bump to
+be detectable at all.
 
 ---
 
