@@ -2,6 +2,29 @@
 
 ---
 
+## 2026-07-31 (continued 3) — Admin Hub Dashboard build spec written
+
+Suite-wide design conversation (started in PoPs House over the new Download Link field) landed
+here, since this shell is the Hub's actual host — `main.js`'s `APP_URL` will eventually point at
+the Hub instead of straight at CBM. Full design: main mount's `decisions/D-057-admin-hub-
+dashboard-suite-wide.md`. Build spec: `spec/HUB_BUILD_SPEC.md` — server schema (account
+entitlement projection sourced from PoPs House's existing subscription registry, a shared-folder
+label record since File System Access API handles can't cross machines, Tier 2 module summary-
+export file contracts for CTC/CBM/PoPs Estimating, an optional purchase-request log), API shape,
+UI wireframe (welcome/readme, module grid, locked-module price popup + mailto request, Admin
+shared-folder setup).
+
+**No new decisions made — spec-only, synthesis of what D-057 already locked.** Flagged its own
+real open items (price list, exact Tier 2 field lists, whether per-module Admin tabs get
+deprecated, per-module auto-push implementation) rather than assuming answers.
+
+**Not built. No code.** Per Rule D, next gate is "save state" before any implementation. **Blocked:**
+none. **Next:** pops's call — resolve the spec's flagged open items, or say "save state" and start
+building (likely Section 1's entitlement endpoint + PoPs House registry read first, since
+everything else depends on knowing what an account actually owns).
+
+---
+
 ## 2026-07-31 — Real installer built; auto-updater wired in code, blocked on 2 manual steps
 
 Pops asked for a real distributable bundle he could send through PoPs House for an upcoming client
