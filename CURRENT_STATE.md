@@ -2,6 +2,26 @@
 
 ---
 
+## 2026-08-01 (continued 8) — Hub key redesign confirmed live, real end-to-end, pops's own hands
+
+All three repos (Engine Server `7c19add`, PoPs House `4ff4ce4`, this repo `b8ea55f`) pushed and
+confirmed synced (`git status` clean, no ahead/behind, all three). Vercel redeployed. Pops then did
+the real test himself, better than anything scriptable this session: opened PoPs House's own UI
+(not a hand-built client — its save flow needs a native folder-picker dialog no browser-automation
+tool can drive, so this was the first real exercise of that path since the redesign), generated new
+keys (now carrying `accountId` automatically for every module per today's fix), pasted each into its
+own tile on the LIVE deployed Hub, and confirmed: **"products activated."**
+
+This is the real proof the previous entry's local/mocked testing couldn't fully provide —
+confirms the whole chain works against the actual production deployment, through the actual admin
+tool, not just against a hand-built test client. Hub per-module key redesign is done and verified.
+
+**Blocked:** none. **Next:** see `PICKUP-NEXT.md` — transcript capture is still the outstanding
+attended-session item; the second-machine demo can now use this exact same real flow with full
+confidence, proven twice (hand-built test client earlier, real PoPs House client just now).
+
+---
+
 ## 2026-08-01 (continued 7) — Hub per-module key redesign: real architecture fix, not a patch (Engine Server + PoPs House)
 
 Pops raised two real bugs (CTC's AIA Billing/PoPs APM buttons 404'd — stale local-file relative

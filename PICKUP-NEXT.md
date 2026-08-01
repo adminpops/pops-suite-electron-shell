@@ -4,14 +4,11 @@
 > "the first time this module has enough real history to need them"; today qualifies). Read at
 > session open, alongside `CURRENT_STATE.md`.
 
-## 🔴 TOP — push the Hub key-redesign commits, then a real live test
+## ✅ DONE — Hub key redesign pushed and confirmed live (2026-08-01)
 
-Engine Server (`7c19add`) and PoPs House (`4ff4ce4`) both need pushing — same pattern as everything
-else tonight, pops runs `git push` in each repo himself. Once Engine Server's push redeploys on
-Vercel: paste each of the three real test keys (CTC/CBM/POPS_EST, in `PoPs House\clients\
-test_machine_full_access.json`) into the LIVE Hub's own tiles (not the local-file/mocked-fetch
-testing already done this session) and confirm the whole chain for real — key accepted → folder
-gate → open CTC/CBM/PoPs Estimating → each auto-activates from the bridge with no re-paste.
+All three repos pushed and synced. Pops did the real end-to-end test himself through PoPs House's
+own UI (real key generation, real Hub tiles) — confirmed working live. See `CURRENT_STATE.md`'s
+newest entry. Nothing further needed here.
 
 ## 🔴 TOP — capture this session's transcript first, attended
 
