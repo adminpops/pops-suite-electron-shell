@@ -2,6 +2,97 @@
 
 ---
 
+## 2026-08-01 (continued 3) — Go Home: session close-out
+
+Pops: "good build session today, run transcrpt and go home." Real, full-suite session — the Admin
+Hub Dashboard went from spec-only to a working, live-verified build across three repos (Engine
+Server, PoPs House, Electron Shell), plus a real live demo prep pass. Everything built this
+session is committed and pushed; production deploys confirmed "Ready." Full narrative lives in
+this file's own entries above (2026-07-31 continued 3 through 2026-08-01 continued 2) — not
+re-summarized here, per the suite's own "the disk is the memory" principle.
+
+**Transcript capture — flagged, not done.** Per D-036 (main mount, propagated suite-wide): a
+session's own transcript can't be reliably captured from inside itself — the check that makes
+capture safe (`get_session` confirming `isRunning:false`) can't pass for a session that's still
+open. The established, debugged pattern is to capture it as the first attended action of the NEXT
+session that opens this folder, not right now. Recorded here so it isn't silently skipped:
+**next session opening Electron Shell should capture this session's transcript first, before other
+work**, using `list_sessions`/`search_session_transcripts` to find it, `get_session` to confirm it
+closed, `list_events` to pull it, written to `transcripts/<session-id>-<date>.md` (new folder, none
+exists yet — create it).
+
+**This module now has enough real history to earn `PICKUP-NEXT.md`** (per this file's own CLAUDE.md
+note: "add them the first time this module has enough real history to need them") — created this
+session, see that file for the top priorities.
+
+**Blocked:** none. **Next:** see `PICKUP-NEXT.md`.
+
+---
+
+## 2026-08-01 (continued 2) — 4 more modules hosted for a real demo (5 protected total)
+
+Pops: "i want to load the full suite on the test" — planning a real demo tomorrow on another
+machine/email account. Real fork found and resolved with pops directly (same pattern as D-053's
+own CBM-hosting decision): Labor Forecast and Schedule & Scope still have their real calculation
+logic entirely client-side (no `labor-forecast-calc`/`schedule-calc` endpoint exists — checked),
+so hosting them would expose that logic via view-source, unlike the other 5 modules whose real IP
+already moved server-side under D-037/D-039/D-052. Pops's call: "so we have 5 we can protect and
+load out" — host the 5 already-safe modules now, leave those 2 local-file-only until a real
+server-side migration (its own separate project, not started).
+
+**Built (Engine Server):** hosted CTC (`ctc_workbook.html`), PoPs Estimating (`pops_estimating.
+html`), AIA Billing (`AIA_Billing_Worksheet.html`), and PoPs APM (`pops_apm_v3.html`) at `app/ctc/`,
+`app/estimating/`, `app/aia-billing/`, `app/pops-apm/` — same pattern as `app/cbm/`. Updated the
+Hub's `HUB_MODULES` config with real launch links for all 5 protected modules plus PoPs Field
+(already live at `/field`) — Labor Forecast/Schedule & Scope/PoPs Procurement stay `launch:null`.
+
+**Verified:** secrets-sanity grep on all 4 new files before hosting (same diligence as when the
+Electron Shell repo itself was made public) — no new secrets found; the one hit (`ADMIN_PASSWORD =
+"?admin=1"` in PoPs Estimating) is the already-known, already-flagged weak local admin gate, not
+something introduced by hosting. Inline-script syntax-clean on all 4. Served locally and confirmed
+all 5 app pages + the Hub return real HTTP 200 with correct page titles and zero console errors
+(CTC: "PoPs Project Tracker v35," PoPs Estimating: "PoPs Estimating," AIA: "AIA Billing Worksheet,"
+APM: "PoPs APM v3..."). Injected a full mock entitlements payload (all 7 real modules owned) into
+the live Hub page and confirmed: all 5 protected modules render real `<a href>` launch links in the
+right order; Labor Forecast/Schedule & Scope correctly still show "Owned — desktop launch not
+available here yet" even when owned (no fake link); PoPs Field/Procurement correctly locked (no
+ownership data source). One local-test-server-only false alarm (Python's `http.server` 301-redirects
+`/app/ctc` -> `/app/ctc/`, unlike Vercel's `cleanUrls` which serves it directly, same as `/app/cbm`
+already does in production) — confirmed it wasn't a real bug by navigating the resolved path
+directly and getting real CTC content back.
+
+**Not committed yet.**
+
+**Blocked:** none. **Next:** pops's call — commit + push, then a real live-deployment check
+(same "Ready" status check every prior push has used) before tomorrow's demo.
+
+---
+
+## 2026-08-01 (continued) — Labor Forecast/Schedule & Scope entitlement gap fixed
+
+Pops: "fix the labor forecast/scope and schedule." Real correction mid-build: pops pointed out
+Schedule & Scope DOES have a shipped app (`engine\Construction_Intelligence_Engine.html`) — I'd
+missed it checking only the project root. Confirmed it's equally ungated as Labor Forecast (zero
+license-check code in either) — so the fix is a manual PoPs House ownership record, not new
+enforcement in either app. Full detail in PoPs House's own `CURRENT_STATE.md`.
+
+**Built here:** `api/hub/entitlements.js` (Engine Server) — `LABOR_FORECAST`/`SCOPE_SCHEDULE`
+added back into `HOUSE_CODE_TO_HUB_KEY` now that PoPs House v2.6 has a real `c.addons[code]`
+source, mapped straight through like CTC/CBM/POPS_EST. Removed the now-stale "always unowned"
+limitation note from `app/hub/index.html`'s own top comment.
+
+**Verified:** `node --check` clean. Real functional test (mock registry entry with `LABOR_
+FORECAST:true`/`SCOPE_SCHEDULE:false`) confirms both map through exactly as recorded;
+`aia_billing`/`pops_apm` still correctly derived from `ctc.owned`; live `data/subscriptions.json`
+confirmed restored to `{}` after the test.
+
+**Not committed yet.**
+
+**Blocked:** none. **Next:** pops's call — commit + push (Engine Server here, PoPs House
+separately), then a real export/publish cycle so this shows real data end-to-end.
+
+---
+
 ## 2026-08-01 — main.js APP_URL switched from CBM to the Hub
 
 Pops confirmed "save state" after being told the real consequence: this changes what the
@@ -13,18 +104,14 @@ reachable as the Hub's own "Open →" tile.
 the seam the file's own original comment anticipated ("Swap per app when this shell wraps
 CTC/PoPs Estimating too").
 
-**Verified:** `node --check` clean. Not re-verified via a live Electron launch this session — the
-actual target URL (`https://engine-server-5.vercel.app/app/hub`) was already fully live-tested
-(real key, real activation, real module grid, real shared-folder read/write) in the prior entry
-below; this change is a pure pointer swap to that already-proven page, not new UI logic. A real
-`npm start` launch (native window, not something the Browser pane can drive) would still be the
-honest way to confirm the shell itself picks it up correctly — not done this session, worth doing
-before the next real installer rebuild.
+**Verified:** `node --check` clean. Committed + pushed (`96aea5b`). **Real `npm start` launch also
+done, same session:** 4 real `electron` processes confirmed via `Get-Process` (same multi-process
+signature as the original 2026-07-29 verification), main window title confirmed as literally
+"PoPs Suite — Admin Hub" — an exact match for the Hub page's own `<title>` tag, proving the shell
+loaded the Hub (not CBM, not a blank/error window). Left running for pops to click through himself.
 
-**Not committed yet.**
-
-**Blocked:** none. **Next:** pops's call — commit + push, real `npm start` verification, or the
-Labor Forecast/Schedule & Scope tracking gap (PoPs House) whenever ready.
+**Blocked:** none. **Next:** pops's call — close the test window, or the Labor Forecast/Schedule &
+Scope tracking gap (PoPs House) whenever ready.
 
 ---
 
