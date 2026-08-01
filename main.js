@@ -20,7 +20,7 @@
 // v0.1.0 installer shows on its next real rebuild/update.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, Menu } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -66,6 +66,30 @@ function createWindow() {
   });
 
   win.loadURL(APP_URL);
+
+  // Electron does NOT give editable fields a native right-click Cut/Copy/Paste menu by default
+  // (unlike a real browser) -- nothing in this file ever wired one up, so right-click did nothing
+  // on any text field in any app opened through this shell (Ctrl+V/Ctrl+C still worked via the
+  // default application menu's Edit accelerators). Standard documented Electron pattern: build a
+  // menu from the real edit-state flags Chromium hands back, so items are only enabled when the
+  // action is actually valid (e.g. Paste greyed out with an empty clipboard).
+  win.webContents.on('context-menu', (event, params) => {
+    const template = [];
+    if (params.isEditable) {
+      template.push(
+        { role: 'cut', enabled: params.editFlags.canCut },
+        { role: 'copy', enabled: params.editFlags.canCopy },
+        { role: 'paste', enabled: params.editFlags.canPaste },
+        { type: 'separator' },
+        { role: 'selectAll', enabled: params.editFlags.canSelectAll }
+      );
+    } else if (params.selectionText) {
+      template.push({ role: 'copy' });
+    }
+    if (template.length) {
+      Menu.buildFromTemplate(template).popup({ window: win });
+    }
+  });
 
   // Anything not the app's own origin (e.g. a link someone pastes into a message that ends up
   // clicked from inside the shell) opens in the OS's real default browser instead of navigating
