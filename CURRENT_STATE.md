@@ -2,6 +2,42 @@
 
 ---
 
+## 2026-08-01 (continued 9) — Go Home: real bugs found during pops's own post-redesign testing
+
+Pops actually used the redesigned flow inside the real Electron shell (not just my own live-tested
+confirmation) and found two real things:
+
+**Fixed — AIA Billing / RFI links wouldn't open from CTC.** Real root cause: my earlier same-day
+fix only caught ONE of TWO places these links exist in `app/ctc/index.html` — the Admin panel's
+copy. The **top-nav copies** (with the 📄/📋 icons, the ones pops actually clicked) still pointed
+at the old `modules/aia-billing/...`/`modules/pops-apm/...` local-file relative paths. Fixed both
+now, and dropped `target="_blank"` from all four links suite-wide (Admin panel + top nav) — a
+`target="_blank"` open routes through Electron's `setWindowOpenHandler`, which allows same-origin
+new-window requests but with Electron's DEFAULT `webPreferences` (no `preload.js`, no custom
+menu), unlike the same-window navigation pattern already proven reliable everywhere else in the
+shell (the Hub's own `Open ->` links use exactly that pattern). Verified: inline scripts
+syntax-clean. Committed `0dc018b` (Engine Server), pops needs to push it.
+
+**Flagged, not fixed — CBM and PoPs Estimating both required a fresh manual folder pick**, even
+though the shared folder was already connected (green check) at the Hub. Real finding, not
+assumed: neither module's own folder code was touched today (`loadDocsFolderHandle()` in CBM,
+`wsLoadFolderHandle()` in PoPs Estimating both predate this session, both already implement the
+"silently reconnect via `queryPermission()`, no prompt needed" pattern CTC also uses) — so this
+isn't a regression from tonight's work. Best-guess root cause, unverified: Electron's File System
+Access API implementation may not persist a granted directory-handle permission across separate
+full-page navigations between modules (each is a real top-level navigation to a different
+Vercel-hosted page, not an in-page SPA transition) the way real Chrome does — a structural
+Electron-vs-Chrome difference, not a simple app-code bug, and not verifiable without direct access
+to a running Electron session (which this environment doesn't have). Real-world impact is small
+(one extra manual pick per module, once) but real. Explicitly left open rather than guessed at —
+see `PICKUP-NEXT.md`.
+
+**Blocked:** none. **Next:** see `PICKUP-NEXT.md` — the folder-repick investigation is the one real
+open item; everything else from tonight (Hub key redesign, signing, nav/loading fixes, mojibake,
+AIA/RFI links) is shipped and confirmed.
+
+---
+
 ## 2026-08-01 (continued 8) — Hub key redesign confirmed live, real end-to-end, pops's own hands
 
 All three repos (Engine Server `7c19add`, PoPs House `4ff4ce4`, this repo `b8ea55f`) pushed and

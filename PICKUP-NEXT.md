@@ -4,11 +4,39 @@
 > "the first time this module has enough real history to need them"; today qualifies). Read at
 > session open, alongside `CURRENT_STATE.md`.
 
+## 🔴 TOP — Investigate CBM/PoPs Estimating folder-repick inside Electron
+
+Pops used the redesigned flow for real in the Electron shell and had to manually pick the shared
+folder again in both CBM and PoPs Estimating, even though it was already connected (green check) at
+the Hub. Neither module's own folder code was touched this session — best-guess, UNVERIFIED root
+cause: Electron's File System Access implementation may not persist a granted directory-handle
+permission across separate full-page navigations between modules (real top-level navigations
+between different Vercel-hosted pages, not in-page SPA transitions), unlike real Chrome. Small
+real-world impact (one extra manual pick per module, once) but worth understanding properly before
+assuming it's fine. Full detail: `CURRENT_STATE.md`'s newest entry. Needs direct access to a
+running Electron session to actually debug — wasn't available this session.
+
 ## ✅ DONE — Hub key redesign pushed and confirmed live (2026-08-01)
 
 All three repos pushed and synced. Pops did the real end-to-end test himself through PoPs House's
-own UI (real key generation, real Hub tiles) — confirmed working live. See `CURRENT_STATE.md`'s
-newest entry. Nothing further needed here.
+own UI (real key generation, real Hub tiles) — confirmed working live. Two real bugs found during
+that same real-world test got fixed same day too: AIA/RFI links in CTC's top nav (a second,
+un-caught copy of the same stale-path bug), and `target="_blank"` dropped suite-wide in favor of
+same-window nav. See `CURRENT_STATE.md`'s two newest entries.
+
+## ✅ DONE — Smart App Control self-signed cert import (2026-08-01)
+
+Pops ran the elevated `Import-Certificate` commands himself; `Set-AuthenticodeSignature` now
+reports `Status: Valid` on this machine. Re-signing command after any future rebuild is still
+worth keeping handy:
+```powershell
+$cert = Get-ChildItem "Cert:\CurrentUser\My" | Where-Object { $_.Thumbprint -eq "49870F006AA7F501B8EBB91C9B418FCD02B91DCB" }
+Set-AuthenticodeSignature -FilePath "C:\Users\mikeg\PoPs Suite\Electron Shell\dist\win-unpacked\PoPs Suite.exe" -Certificate $cert
+```
+Don't try wiring `CSC_LINK`/`CSC_KEY_PASSWORD` into `electron-builder` itself again — that path is
+broken on this machine (winCodeSign toolkit's symlink extraction needs admin/Developer Mode). This
+remains a you-only dev/test fix, not a customer solution — a real public CA cert is still the
+eventual requirement before wider distribution, deferred until revenue justifies it.
 
 ## ✅ DONE (partial, honestly) — transcript capture attempted (2026-08-01)
 
@@ -48,30 +76,6 @@ either) — confirmed while deciding not to host them alongside the other 5 modu
 server-side is its own project, same size as the original CBM/CTC pivot (D-037/D-039) — needs a
 real scoping session, not a quick add-on. Until then they stay `launch:null` in the Hub and
 unhosted on Engine Server.
-
-## 🔴 TOP — Import the self-signed dev cert into the trust store (Smart App Control fix)
-
-Pops needs to run this himself, elevated (system security-store change, not something Claude can
-do) — from an **elevated** PowerShell:
-```powershell
-Import-Certificate -FilePath "C:\Users\mikeg\PoPs Suite\Electron Shell\certs\pops-suite-dev-cert.cer" -CertStoreLocation "Cert:\LocalMachine\Root"
-Import-Certificate -FilePath "C:\Users\mikeg\PoPs Suite\Electron Shell\certs\pops-suite-dev-cert.cer" -CertStoreLocation "Cert:\LocalMachine\TrustedPublisher"
-```
-Then relaunch `dist\win-unpacked\PoPs Suite.exe` and confirm Smart App Control no longer blocks it.
-This is a you-only dev/test fix (see `CURRENT_STATE.md`, same-day entry) — does NOT solve this for
-real customers; a real public CA cert is still the eventual requirement before wider distribution,
-deferred until there's revenue to justify it (pops's own call).
-
-**Re-signing after any future rebuild:** the cert is exportable and sitting in
-`Cert:\CurrentUser\My` (thumbprint `49870F006AA7F501B8EBB91C9B418FCD02B91DCB`) — after
-`npm run dist`, re-sign with:
-```powershell
-$cert = Get-ChildItem "Cert:\CurrentUser\My" | Where-Object { $_.Thumbprint -eq "49870F006AA7F501B8EBB91C9B418FCD02B91DCB" }
-Set-AuthenticodeSignature -FilePath "C:\Users\mikeg\PoPs Suite\Electron Shell\dist\win-unpacked\PoPs Suite.exe" -Certificate $cert
-```
-Don't try wiring `CSC_LINK`/`CSC_KEY_PASSWORD` into `electron-builder` itself again — that path is
-broken on this machine (winCodeSign toolkit's symlink extraction needs admin/Developer Mode, see
-`CURRENT_STATE.md`). Signing after the build, directly, is the working path.
 
 ---
 *Update at every session close.*
