@@ -53,10 +53,48 @@ autoUpdater.on('update-downloaded', () => {
 // cleanUrls already serves app/hub/index.html at this exact path, same as app/cbm did.)
 const APP_URL = 'https://engine-server-5.vercel.app/app/hub';
 
+// Real navigation menu (added 2026-08-01, pops: "everthing needs back buttons i have to close
+// and start over") -- the shell only ever loaded a URL and left it at that, so clicking into a
+// module from the Hub had no way back except quitting and relaunching. Native menu bar, not page
+// content -- same "shell chrome only, no app HTML/JS ships" reasoning as the context-menu fix.
+// "Home" is a separate action from "Back" on purpose: back-history inside a module's own app can
+// get deep/weird (tabs, modals, etc.), Home always guarantees a clean return to the Hub.
+function buildMenu(win) {
+  const template = [
+    {
+      label: 'Navigate',
+      submenu: [
+        { label: 'Back', accelerator: 'Alt+Left', click: () => { if (win.webContents.canGoBack()) win.webContents.goBack(); } },
+        { label: 'Forward', accelerator: 'Alt+Right', click: () => { if (win.webContents.canGoForward()) win.webContents.goForward(); } },
+        { label: 'Home (Hub)', accelerator: 'Alt+Home', click: () => { win.loadURL(APP_URL); } },
+        { type: 'separator' },
+        { label: 'Reload', accelerator: 'CmdOrCtrl+R', click: () => { win.webContents.reload(); } }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    }
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1400,
     height: 900,
+    backgroundColor: '#f4f5fa', // matches the Hub's own page background -- avoids a jarring pure-
+    // white flash while the very first load is still in flight, before backgroundColor even matters
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -65,7 +103,41 @@ function createWindow() {
     }
   });
 
+  buildMenu(win);
+
   win.loadURL(APP_URL);
+
+  // Real loading indicator (added 2026-08-01, pops: "and it takes a while to load") -- CBM (684KB)
+  // and PoPs Estimating (876KB) are large single-file apps, real weight to fetch/parse, especially
+  // cold. The window used to just sit blank-white with zero feedback while that happened, which
+  // reads as frozen, not "working." Two native, page-content-free signals instead: the window
+  // title says so, and the taskbar icon gets an indeterminate progress ring (Electron's own
+  // documented pattern -- setProgressBar(2) = indeterminate on Windows, <0 = removed). The title
+  // corrects itself automatically once the real page loads and sets its own <title> -- Electron
+  // does that by default, nothing to revert manually.
+  win.webContents.on('did-start-loading', () => {
+    win.setTitle('PoPs Suite — Loading…');
+    win.setProgressBar(2);
+  });
+  win.webContents.on('did-stop-loading', () => {
+    win.setProgressBar(-1);
+  });
+
+  // Mouse back/forward side buttons (most mice have these) -- same real back/forward navigation
+  // as the menu items above, just via the hardware buttons users already expect this from.
+  win.on('app-command', (e, cmd) => {
+    if (cmd === 'browser-backward' && win.webContents.canGoBack()) win.webContents.goBack();
+    else if (cmd === 'browser-forward' && win.webContents.canGoForward()) win.webContents.goForward();
+  });
+
+  // Alt+Left / Alt+Right keyboard back/forward -- the menu accelerators above already cover this
+  // on Windows, but before-input-event is the documented cross-platform way to be sure it fires
+  // even when focus is deep inside the loaded page's own content.
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || !input.alt) return;
+    if (input.key === 'ArrowLeft' && win.webContents.canGoBack()) win.webContents.goBack();
+    else if (input.key === 'ArrowRight' && win.webContents.canGoForward()) win.webContents.goForward();
+  });
 
   // Electron does NOT give editable fields a native right-click Cut/Copy/Paste menu by default
   // (unlike a real browser) -- nothing in this file ever wired one up, so right-click did nothing
