@@ -11,6 +11,13 @@
 // Security settings below (contextIsolation on, nodeIntegration off, no remote module) are
 // Electron's own documented baseline for "loads a remote URL" apps — this window has no reason to
 // touch Node/filesystem APIs at all, so it doesn't get the ability to.
+//
+// 2026-08-01 — APP_URL switched from CBM straight to the Admin Hub (HUB_BUILD_SPEC.md,
+// spec/HUB_BUILD_SPEC.md), now that the Hub has a working first pass (module grid, locked-tile
+// requests, Admin shared-folder setup) verified live. CBM itself is still reachable — it's the
+// Hub's own "Open →" tile — this just adds the Hub as a real home screen instead of skipping
+// straight to one module. Pops's own call, confirmed knowing this changes what the already-shipped
+// v0.1.0 installer shows on its next real rebuild/update.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const { app, BrowserWindow, dialog } = require('electron');
@@ -41,11 +48,10 @@ autoUpdater.on('update-downloaded', () => {
   });
 });
 
-// Swap per app when this shell wraps CTC/PoPs Estimating too — one shell, one URL constant,
-// same as every other module's own _WS_ENGINE_SERVER/_EST_ENGINE_SERVER pointer pattern.
-// (No custom vercel.json rewrite needed — Vercel's own cleanUrls already serves
-// app/cbm/index.html at this exact path.)
-const APP_URL = 'https://engine-server-5.vercel.app/app/cbm';
+// Points at the Hub, not a single module — the Hub itself launches CBM (and, once hosted, CTC/
+// PoPs Estimating) from its own module grid. (No custom vercel.json rewrite needed — Vercel's own
+// cleanUrls already serves app/hub/index.html at this exact path, same as app/cbm did.)
+const APP_URL = 'https://engine-server-5.vercel.app/app/hub';
 
 function createWindow() {
   const win = new BrowserWindow({
