@@ -10,14 +10,17 @@ All three repos pushed and synced. Pops did the real end-to-end test himself thr
 own UI (real key generation, real Hub tiles) — confirmed working live. See `CURRENT_STATE.md`'s
 newest entry. Nothing further needed here.
 
-## 🔴 TOP — capture this session's transcript first, attended
+## ✅ DONE (partial, honestly) — transcript capture attempted (2026-08-01)
 
-Per D-036 (main mount), a session's transcript can't be reliably captured from inside itself. The
-session that built the Admin Hub end-to-end (2026-07-31 through 2026-08-01, "good build session
-today, run transcrpt and go home") still needs capturing. First attended action next time this
-folder opens: find it (`list_sessions`/`search_session_transcripts`), confirm `isRunning:false`
-(`get_session`), pull it (`list_events`), write to `transcripts/<session-id>-<date>.md` (new
-folder — create it).
+Found the right session (`local_e7a1b594...`, "hub" — confirmed via `search_session_transcripts`
+for `HUB_BUILD_SPEC`), but it's 1972 messages long and the actual Hub-build exchange sits well
+before what paginating backward from the tail could reach within a practical budget (~330
+messages reached, still in unrelated later-session Schedule & Scope territory). Wrote
+`transcripts/local_e7a1b594-3be3-4721-bfa5-2edfffe2dd44-2026-08-01.md` as an honest placeholder
+rather than mislabeling unrelated content as this module's own record — `CURRENT_STATE.md` remains
+the real, detailed, authoritative narrative of the Hub build (it always was). Don't re-attempt this
+unless a genuine need for the raw exchange comes up — the file itself has the `before_uuid` chain
+to resume from if so.
 
 ## Real demo, pending (pops's own plan, "tomorrow" as of 2026-08-01)
 
@@ -69,13 +72,6 @@ Set-AuthenticodeSignature -FilePath "C:\Users\mikeg\PoPs Suite\Electron Shell\di
 Don't try wiring `CSC_LINK`/`CSC_KEY_PASSWORD` into `electron-builder` itself again — that path is
 broken on this machine (winCodeSign toolkit's symlink extraction needs admin/Developer Mode, see
 `CURRENT_STATE.md`). Signing after the build, directly, is the working path.
-
-## Real installer/demo consequence, already accepted
-
-`main.js`'s `APP_URL` now points at the Hub instead of straight at CBM (2026-08-01). The already-
-published `v0.1.0` installer will show the Hub on its next real rebuild/update — pops confirmed
-knowing this before the change. No action needed unless a rebuild happens and something looks
-wrong.
 
 ---
 *Update at every session close.*
