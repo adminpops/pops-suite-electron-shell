@@ -89,10 +89,72 @@ function buildMenu(win) {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-function createWindow() {
+// Splash window (added 2026-08-01, pops: "can you build a static window while loading in
+// progress and progress bar") -- shown only for the app's cold launch, before the real Hub page
+// has ever loaded once. Loads a small local `loading.html` -- pure branding/animation, no product
+// content, same "shell chrome only" reasoning as everything else in this file, so it doesn't
+// conflict with D-052. Frameless + centered + skipTaskbar so it doesn't look like a second real
+// app window, just a splash.
+function createSplash() {
+  const splash = new BrowserWindow({
+    width: 360,
+    height: 220,
+    frame: false,
+    resizable: false,
+    center: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    backgroundColor: '#2f1f6b',
+    webPreferences: { sandbox: true }
+  });
+  splash.loadFile(path.join(__dirname, 'loading.html'));
+  return splash;
+}
+
+// Real, visible top-of-window progress bar (added same session as the splash window above) --
+// the taskbar progress ring is easy to miss since it's off in the taskbar, not in the window
+// itself. Injected via insertCSS/executeJavaScript (works regardless of the loaded page's own
+// CSP -- these are devtools-protocol-level injections, not <style>/<script> tags subject to it),
+// removed again once the page finishes. Runs on every navigation, not just cold launch, since
+// clicking from the Hub into a large module (CBM/PoPs Estimating) is exactly when this matters
+// most.
+const LOADING_BAR_CSS = `
+#__pops_shell_loading_bar {
+  position: fixed; top: 0; left: 0; width: 100%; height: 3px;
+  z-index: 2147483647; overflow: hidden; pointer-events: none;
+}
+#__pops_shell_loading_bar::after {
+  content: ''; position: absolute; top: 0; left: -40%; width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, #f5a623, transparent);
+  animation: __pops_shell_loading_slide 1s ease-in-out infinite;
+}
+@keyframes __pops_shell_loading_slide {
+  0% { left: -40%; } 100% { left: 100%; }
+}
+`;
+const SHOW_LOADING_BAR_JS = `
+(function(){
+  if (!document.getElementById('__pops_shell_loading_bar')) {
+    var d = document.createElement('div');
+    d.id = '__pops_shell_loading_bar';
+    (document.body || document.documentElement).appendChild(d);
+  }
+})();
+`;
+const HIDE_LOADING_BAR_JS = `
+(function(){
+  var el = document.getElementById('__pops_shell_loading_bar');
+  if (el) el.remove();
+})();
+`;
+
+function createWindow(splash) {
   const win = new BrowserWindow({
     width: 1400,
     height: 900,
+    show: !splash, // if a splash window is up (cold launch), stay hidden until the real page is
+    // ready so there's no blank/white flash behind the splash; on later window recreations
+    // (macOS 'activate' with no splash in play) just show immediately as before.
     backgroundColor: '#f4f5fa', // matches the Hub's own page background -- avoids a jarring pure-
     // white flash while the very first load is still in flight, before backgroundColor even matters
     webPreferences: {
@@ -107,20 +169,31 @@ function createWindow() {
 
   win.loadURL(APP_URL);
 
+  if (splash) {
+    win.webContents.once('did-finish-load', () => {
+      splash.close();
+      win.show();
+    });
+  }
+
   // Real loading indicator (added 2026-08-01, pops: "and it takes a while to load") -- CBM (684KB)
   // and PoPs Estimating (876KB) are large single-file apps, real weight to fetch/parse, especially
   // cold. The window used to just sit blank-white with zero feedback while that happened, which
-  // reads as frozen, not "working." Two native, page-content-free signals instead: the window
-  // title says so, and the taskbar icon gets an indeterminate progress ring (Electron's own
-  // documented pattern -- setProgressBar(2) = indeterminate on Windows, <0 = removed). The title
-  // corrects itself automatically once the real page loads and sets its own <title> -- Electron
-  // does that by default, nothing to revert manually.
+  // reads as frozen, not "working." Signals used, all page-content-free: the window title, an
+  // indeterminate taskbar progress ring, and (added later same session) a real visible progress
+  // bar injected at the top of the window itself. Title uses a plain ASCII hyphen/dots on purpose
+  // -- an em dash/ellipsis here (unlike in the page's own <title>, set through Electron's normal
+  // page-title-updated path) rendered as mojibake in the native Windows title bar; simplest fix is
+  // not risking those characters in a directly-set title at all.
   win.webContents.on('did-start-loading', () => {
-    win.setTitle('PoPs Suite — Loading…');
+    win.setTitle('PoPs Suite - Loading...');
     win.setProgressBar(2);
+    win.webContents.insertCSS(LOADING_BAR_CSS).catch(() => {});
+    win.webContents.executeJavaScript(SHOW_LOADING_BAR_JS).catch(() => {});
   });
   win.webContents.on('did-stop-loading', () => {
     win.setProgressBar(-1);
+    win.webContents.executeJavaScript(HIDE_LOADING_BAR_JS).catch(() => {});
   });
 
   // Mouse back/forward side buttons (most mice have these) -- same real back/forward navigation
@@ -178,7 +251,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  createWindow();
+  const splash = createSplash();
+  createWindow(splash);
   checkForUpdates();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -21,7 +21,8 @@
     "productName": "PoPs Suite",
     "files": [
       "main.js",
-      "preload.js"
+      "preload.js",
+      "loading.html"
     ],
     "win": {
       "target": "nsis",
