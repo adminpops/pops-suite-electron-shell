@@ -4,6 +4,15 @@
 > "the first time this module has enough real history to need them"; today qualifies). Read at
 > session open, alongside `CURRENT_STATE.md`.
 
+## 🔴 TOP — push the Hub key-redesign commits, then a real live test
+
+Engine Server (`7c19add`) and PoPs House (`4ff4ce4`) both need pushing — same pattern as everything
+else tonight, pops runs `git push` in each repo himself. Once Engine Server's push redeploys on
+Vercel: paste each of the three real test keys (CTC/CBM/POPS_EST, in `PoPs House\clients\
+test_machine_full_access.json`) into the LIVE Hub's own tiles (not the local-file/mocked-fetch
+testing already done this session) and confirm the whole chain for real — key accepted → folder
+gate → open CTC/CBM/PoPs Estimating → each auto-activates from the bridge with no re-paste.
+
 ## 🔴 TOP — capture this session's transcript first, attended
 
 Per D-036 (main mount), a session's transcript can't be reliably captured from inside itself. The
@@ -16,14 +25,13 @@ folder — create it).
 ## Real demo, pending (pops's own plan, "tomorrow" as of 2026-08-01)
 
 Pops is creating a client with a second email account and installing the shell on another machine
-as a demo. Needs, in PoPs House: a real client record, a CTC key (Hub login) AND a CBM key
-(unlocks the CBM tile — the Hub needs both, not just the CTC key), then Export Subscription
-Registry → send Claude the file → publish. Full detail: this file's own `CURRENT_STATE.md`,
-2026-08-01 entries. **Updated 2026-08-01 (later same day):** this exact flow was proven end-to-end
-once already, for a full-access test client ("Test Machine (Full Access)") built by hand rather
-than through `pops_house.html`'s own UI (its save flow needs a native folder-picker dialog no
-browser-automation tool can drive) — screenshot-verified live in the Hub. Real confidence booster
-for the second-machine demo, not a replacement for actually doing it with a real second client.
+as a demo. **Superseded same day by the Hub key redesign (see `CURRENT_STATE.md`'s newest entry)**
+— the old "Hub login key + separate per-module keys via a subscription-registry export/publish
+cycle" flow described here no longer matches how the Hub works. Under the new model: generate that
+demo client's CTC/CBM/POPS_EST keys in PoPs House (now each carries an accountId automatically),
+then just paste each into its own tile on the live Hub directly — no Export Subscription Registry
+step needed for these three modules anymore. (Registry export/publish still matters for real
+suspend/cancel enforcement, not for "what shows up as owned.")
 
 ## Process note: `git push` is classifier-blocked for Claude in this environment (2026-08-01)
 

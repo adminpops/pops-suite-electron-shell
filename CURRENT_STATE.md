@@ -2,6 +2,97 @@
 
 ---
 
+## 2026-08-01 (continued 7) — Hub per-module key redesign: real architecture fix, not a patch (Engine Server + PoPs House)
+
+Pops raised two real bugs (CTC's AIA Billing/PoPs APM buttons 404'd — stale local-file relative
+paths from before those apps were hosted; still showed "Trial" with the master key "inserted"), a
+new-user-permissions question (turned out to be about PoPs Field's separate account system, not a
+CTC bug — checkboxes DO render correctly on CTC's own Add User panel, verified live), then a real
+cost/friction concern: **"a lot of fees are going with no revenue comming in"** and **"this is
+going to be cumbersome for someone to get it going with pasting keys here and keys there."** Pushed
+back hard on "flag it for later": *"instead of flagging we should at a minimum discuss and plan the
+fix rather than putting it in a corner."*
+
+**Real root cause found, not assumed:** the Hub's login only ever worked with a CTC-format key,
+because only CTC keys carried an `account_id` (`pops_house.html`'s `genKeyForModule()` only
+attached one for CTC). A CBM- or PoPs-Estimating-only customer had **no key that could log into the
+Hub at all** — a real design hole, not just UX friction. Pops's own reframing: *"does [the hub]
+really need a key? its just the front door... you will need keys to open the other doors."*
+
+**Full plan specced and pops said "save state"** — built completely, this session:
+- `pops_house.html`: every module's key now carries `accountId`, not just CTC's.
+- New `api/hub/verify-module-key.js`: one endpoint, routes to `_license-check.js` (ctc) or
+  `_product-license.js` (cbm/estimating). Extended `_product-license.js` for the new accountId field
+  — **deliberately kept synchronous**, doing the suspend/cancel check in the new endpoint instead of
+  inside the shared file, since 8 existing calc endpoints call it unawaited; making it async would
+  have silently broken all of them (caught this before it shipped, reverted an async pass mid-build).
+- Hub (`app/hub/index.html`, v0.1→v0.2): replaced the single Hub-wide login with **a key-entry box on
+  every module tile** — a valid key for that module unlocks it, no separate login, no dependency on
+  the subscription-registry lookup for CTC/CBM/PoPs Estimating specifically (AIA Billing/PoPs APM
+  still ride CTC per D-034; PoPs Field/Procurement/Labor Forecast/Scope & Schedule unchanged).
+  Accepted keys write to a new shared `pops_suite_keys_v1` IndexedDB (same real cross-page pattern
+  as the folder bridge shipped earlier tonight) so the module itself auto-activates on its own next
+  load. **Folder gate**: first "Open" on a freshly-unlocked tile blocks with a connect-folder prompt
+  if the shared folder isn't connected yet (reuses tonight's earlier real folder-connection fix).
+- CTC, CBM, and PoPs Estimating (`app/ctc`, `app/cbm`, `app/estimating`) each gained a silent
+  bridge-read on their own boot sequence (same spot as their existing folder-handle auto-reconnect)
+  that auto-activates from a Hub-accepted key — no re-pasting inside the module itself.
+- Fixed the two real CTC bugs found along the way: AIA Billing/PoPs APM buttons now point at the
+  real hosted paths (`/app/aia-billing`, `/app/pops-apm`) instead of stale local-file paths.
+
+**Verified, not assumed:** signature format cross-checked byte-for-byte between `pops_house.html`'s
+generator and both server-side verifiers (a hand-computed test key round-tripped correctly through
+each). New endpoint functionally tested with mock req/res (valid key, wrong-module rejection,
+unknown module). Hub tested live in-browser: empty state, key-accept flow, folder-gate block,
+folder-connected pass-through, and a full **page-reload round-trip** confirming both accepted keys
+and AIA Billing's ride-on-CTC unlock persist via IndexedDB with nothing re-entered. All 8 touched
+files syntax-checked clean. Regenerated the test client's CBM/POPS_EST keys (old ones predated
+`accountId`) and reverified them against the real endpoint logic before saving.
+
+**Committed:** Engine Server `7c19add`, PoPs House `4ff4ce4`. **Not pushed yet** — same pattern as
+all night, pops runs `git push` himself in each repo.
+
+**Blocked:** none. **Next:** pops pushes both repos; full true end-to-end (paste a real key against
+the LIVE Vercel deployment, not local/mocked testing) only provable after that deploy finishes.
+Worth a real live pass through all three key-gated tiles once it's up.
+
+---
+
+## 2026-08-01 (continued 6) — Splash window + real progress bar shipped; mojibake was really the raw account_id; CTC "can't click into fields" was normal window-focus behavior, not a bug
+
+**Splash window + progress bar (pops: "can you build a static window while loading in progress and
+progress bar"):** added `loading.html` (pure branding/animation splash, no product content) shown
+on cold launch until the Hub's first real load finishes, plus a real amber progress bar injected at
+the top of the window on every navigation (not just the taskbar icon's indeterminate ring from the
+prior entry). Also fixed the "emojibake top right" report at the code level — `win.setTitle()` was
+using an em dash/ellipsis, which mojibake'd in the native Windows title bar unlike the same
+characters in the page's own `<title>` (set via Electron's normal `page-title-updated` path).
+Rebuilt, re-signed (self-signed dev cert from the prior entry — `Status: Valid` now that the trust
+import landed), verified via `app.asar` extraction, committed `6c76fa2`, pops pushed.
+
+**Real finding: the mojibake wasn't a title-bar bug at all.** After the title fix, pops still saw
+it "next to Change Account" — turned out to be the Hub literally displaying the raw internal
+`account_id` (e.g. `c_msajvqh2y2jq`) as the customer-facing label, which genuinely reads as garbled
+nonsense to a non-technical eye. Real fix, in the main mount (Engine Server, not this repo):
+`api/hub/entitlements.js` now returns the registry's real `customer` field; `app/hub/index.html`
+displays that instead, with `account_id` moved to a hover tooltip. Verified locally (mocked payload,
+confirmed both the real-customer case and the null-customer fallback). Committed `a3d4203`, pops
+pushed — Vercel auto-redeploys, no rebuild needed on this repo for that one.
+
+**"CTC will not let me click in and sign" — investigated, NOT a bug.** Reproduced the exact
+`fs_pass1`/`fs_pass2` fields from CTC's live hosted page in a real browser test first — typing
+worked fine there, ruling out a CTC-side bug. Checked for stacked overlays (none — only one auth
+overlay ever shown at a time) and popup-window focus issues (ruled out — the Hub's "Open →" links
+are plain same-window `<a href>`, never trigger `setWindowOpenHandler` at all). Real cause, confirmed
+directly by pops: standard Windows click-to-focus — after using a folder-picker's native dialog,
+the window had lost OS focus, so the first click on a field only refocused the window rather than
+reaching the input (no cursor). Second click worked immediately. Recorded here so a future session
+doesn't re-investigate this as a live bug.
+
+**Blocked:** none. **Next:** see `PICKUP-NEXT.md`.
+
+---
+
 ## 2026-08-01 (continued 4) — Back/Forward/Home nav + loading indicator shipped; Smart App Control hit; self-signed dev cert set up (not a customer solution)
 
 Pops: "everthing needs back buttons i have to close and start over" + "and it takes a while to
