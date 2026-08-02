@@ -22,18 +22,7 @@
 
 const { app, BrowserWindow, dialog, Menu, session } = require('electron');
 const path = require('path');
-const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
-
-// TEMPORARY diagnostic logging (2026-08-02, round 2) -- pops still hit the CTC repeat-visit
-// "first-time setup" bug after the overlay-hide fix, which only helps once a Hub login actually
-// completes -- so the real problem is ctcHubCheckModuleAccess() never finding a valid session/user
-// on that second visit at all. Same file-logging approach as the folder-permission investigation
-// (worked well then) -- remove once the real cause is found.
-const DEBUG_LOG_PATH = path.join(app.getPath('desktop'), 'pops_suite_debug.log');
-function logDebug(source, message) {
-  try { fs.appendFileSync(DEBUG_LOG_PATH, '[' + new Date().toISOString() + '] ' + source + ': ' + message + '\n'); } catch (e) { /* best-effort only */ }
-}
 
 // Checks GitHub Releases on this repo (adminpops/pops-suite-electron-shell — public, see
 // package.json's own build.publish block) for a newer version, downloads it in the background,
@@ -214,14 +203,6 @@ function createWindow(splash) {
   });
 
   buildMenu(win);
-
-  // TEMPORARY diagnostic logging (2026-08-02, round 2) -- see DEBUG_LOG_PATH above.
-  win.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    logDebug('renderer', message);
-  });
-  win.webContents.on('did-navigate', (event, url) => {
-    logDebug('main', 'did-navigate -> ' + url);
-  });
 
   win.loadURL(APP_URL);
 
