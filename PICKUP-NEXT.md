@@ -22,12 +22,31 @@ the new Electron build if you haven't already, `npm start`, pick the shared fold
 navigate Hub → CBM → Hub → PoPs Estimating and confirm neither module asks you to re-pick.
 That's the one thing that proves this is actually fixed, not just theoretically correct.
 
-**Same session, real cross-module ripple worth knowing about even though it's not this repo:**
-investigating this bug surfaced two more real bugs while poking around the sibling apps —
-PoPs House had zero persistence for its own connected `clients/` folder at all (fixed, v2.7,
-`pops-suite-house` repo), and PoPs Estimating's "Create/Refresh DB Files" was silently missing
-`assy_tree.json` entirely plus had no way to seed a genuinely blank folder (fixed, v53.4, both
-`pops-suite-estimating` and `pops-suite-engine-server` repos — the fix now fetches real seed
+**Update (2026-08-02, same overall session, continued much further):** pops then ran a full
+real-client simulation across the whole suite specifically to hunt for this class of bug before a
+real demo. It turned into the biggest single-night bug sweep the suite has had — full detail
+lives in each touched module's own `CURRENT_STATE.md`, not duplicated here, but the real list:
+PoPs House client-data scare (nothing lost, real fix, v2.7), PoPs Estimating blank-folder DB
+loading (v53.4), jobs/items/admin-config folder persistence (v53.5), a real $6.5M UOM/takeoff-mode
+pricing bug (v53.6), a real CTC→PoPs-Estimating job handoff built from scratch (v53.7, paired with
+CTC's own `ctc_workbook.html` v36 changes in the main mount), Owner-login/Admin-password merge
+(v53.8), and a real Hub "keys not sticking" fail-open fix (`pops-suite-engine-server`, Hub itself).
+Everything committed and pushed, including the main mount (`eb89af6`, pops confirmed the push
+himself since it's the anchor app).
+
+**Real, deliberately-deferred follow-up — pops's own stated product vision:** the Hub should be
+the actual login for every module — log in once, stay logged in until you close the app; one-time
+company/admin setup should persist for the life of the subscription (tonight's folder-persistence
+fixes get that half mostly there already). What's still missing: a real cross-module user
+*session* — right now each app still manages its own separate login independently, even after the
+Hub's key-based module unlock. Agreed with pops this deserves its own real design pass, not
+something rushed at the tail of a long session — genuine next priority whenever this reopens.
+
+**Original cross-module ripple this all traces back to:** PoPs House had zero persistence for its
+own connected `clients/` folder at all (fixed, v2.7, `pops-suite-house` repo), and PoPs
+Estimating's "Create/Refresh DB Files" was silently missing `assy_tree.json` entirely plus had no
+way to seed a genuinely blank folder (fixed, v53.4, both `pops-suite-estimating` and
+`pops-suite-engine-server` repos — the fix now fetches real seed
 data from the hosted app's own `data/` folder). Neither of those needs anything from this repo
 specifically, just flagging the connection since it all traces back to the same demo-prep
 session.
