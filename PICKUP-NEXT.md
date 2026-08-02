@@ -4,7 +4,16 @@
 > "the first time this module has enough real history to need them"; today qualifies). Read at
 > session open, alongside `CURRENT_STATE.md`.
 
-## 🔴 TOP — Real click-through test: does the folder-repick fix actually hold?
+## 🔴 NEWEST (2026-08-02, later same session) — ✅ D-059 COMPLETE: unified Hub login, all 4 pieces shipped
+
+Full status: main mount's `decisions\D-059-hub-unified-login-per-module-pin-time-tracking.md`.
+One Hub login + a new admin space (assign people to modules, set PINs) + a real per-module PIN
+check-in with time logging, now live across CTC (`ctc_workbook.html` v37, main mount), CBM
+(`pops-suite-cbm` v16.4), and PoPs Estimating (`pops-suite-estimating` v53.9) — built and
+verified the same night the design was agreed. Real follow-ups not built (checkout trigger,
+role granularity beyond admin/non-admin) are listed in D-059's own file.
+
+## 🟡 PRIOR — Real click-through test: does the folder-repick fix actually hold?
 
 **Fixed same day (2026-08-01, next session after this file's original entry), root cause
 confirmed via Electron's own GitHub issue tracker, not guessed:** Electron doesn't grant
