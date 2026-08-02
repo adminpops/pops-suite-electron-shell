@@ -260,35 +260,41 @@ hub_time_log.json  (append-only array, at the connected folder's root)
 }]
 ```
 
-### Session state — IndexedDB is correct here (mirrors the existing `pops_suite_keys_v1` bridge)
+### Session state — `sessionStorage`, not IndexedDB (corrected from this section's first draft)
 
-A lightweight `pops_suite_session_v1` IndexedDB record: `{loggedInAs: user_id, loggedInAt}`,
-tab/window-scoped intent ("until he closes" — pops's own words) even though IndexedDB technically
-persists past a tab close; the login screen re-showing is a deliberate design choice (D-059: "same
-once log then pin" applies to the admin too, every session, no special-casing), not a storage
-limitation to work around.
+Built as `sessionStorage.pops_hub_session_v1`: `{userId, name, isAdmin, loggedInAt,
+pinVerifiedModules: []}`. Genuinely clears itself when the tab/window closes — a real match for
+"remains logged in until he closes" (pops's own words) rather than IndexedDB's actual
+persist-past-close behavior needing a workaround. Shared across CTC/CBM/PoPs Estimating/the Hub
+since they're all the same origin and (in the Electron shell) the same top-level browsing context
+— surviving `win.loadURL()` navigations between them same as any other same-origin page.
 
 ### Auth model — two tiers, not one
 
 1. **Hub login (username + password)** — checked against `hub_users.json`'s `password_hash`.
-   Real distinction from the PIN tier below: only people the admin has explicitly given
-   `username`/`password_hash` to can log into the Hub itself at all (presumably admin-tier and
-   above — exact who-gets-a-Hub-login-vs-just-a-module-PIN policy is the admin's own call when
-   using the new admin space, not hardcoded here).
+   **Corrected 2026-08-02, pops's own direct answer:** EVERY person gets real Hub credentials, not
+   just admin-tier — `is_admin` is purely a permission flag for opening the Users & Module Access
+   space (gated both by hiding that UI and a backstop check in `hubOpenUsersAdmin()`), not a gate
+   on whether someone gets a Hub login at all. (Piece 1's first pass had this wrong — scoped
+   username/password to admin-only; caught and fixed before piece 3 could build on it.)
 2. **Per-module PIN** — checked against `pin_by_module[module]`, only reachable for modules listed
-   in `modules_assigned`. Asked once per module per work session (tracked via the same
-   `pops_suite_session_v1` record — add a `pinVerifiedModules: []` array, append on each
-   successful check, check before re-prompting).
+   in `modules_assigned`. Asked once per module per work session (tracked via the same session
+   object above — a `pinVerifiedModules: []` array, append on each successful check, check before
+   re-prompting).
 
-### New Hub admin space (UI)
+### New Hub admin space (UI) — built as a "🔑 Manage Users & PINs" panel + modal, not a nav item
 
-A new Owner/Admin-only nav item alongside the module grid (Section 3) — three real screens:
-- **People** — list of everyone in `hub_users.json`, add/edit, set Hub username+password (admin-
-  tier people) or leave blank (module-PIN-only people).
-- **Module Assignments** — per person, checkbox grid of which modules they're allowed into
+Visible only when the current session's `isAdmin` is true (or nobody's been set up yet at all —
+first-time bootstrap, same "no users yet, skip the gate" pattern the login itself uses). Three
+tabs inside one modal:
+- **People** — list of everyone in `hub_users.json`, add/remove. Every person gets a Hub
+  username+password field when added (see the corrected auth model above) plus an "Admin
+  permission" checkbox.
+- **Module Access & PINs** — per person, checkbox grid of which modules they're allowed into
   (`modules_assigned`) + set/reset each assigned module's PIN.
-- **Time Log** — read-only table of `hub_time_log.json`, filterable by person/module/date — the
-  "accessable by the admin" requirement from D-059, not just a file nobody looks at.
+- **Time Log** — read-only table of `hub_time_log.json` — the "accessable by the admin"
+  requirement from D-059, not just a file nobody looks at. Real empty state shown until piece 3
+  (module-side PIN check) actually writes entries.
 
 ---
 
