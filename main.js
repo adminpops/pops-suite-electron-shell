@@ -67,13 +67,26 @@ const APP_ORIGIN = new URL(APP_URL).origin;
 // remembering a grant across same-session navigations -- this shell was still pinned to Electron
 // 32 (bumped to 37 same change) which predates that API entirely. Scoped to this app's own single
 // trusted origin, same boundary setWindowOpenHandler below already enforces.
+//
+// Real bug found 2026-08-02 via live diagnostic logging: Electron reports requestingOrigin to
+// setPermissionCheckHandler WITH a trailing slash ("https://engine-server-5.vercel.app/"), but
+// APP_ORIGIN (from new URL(APP_URL).origin) never has one -- a straight string comparison always
+// failed, so every queryPermission() check reported not-granted even seconds after a real,
+// successful pick. Re-parsing requestingOrigin through new URL() normalizes it before comparing,
+// so the trailing slash can't break the match either way round.
 function installPersistentFileSystemPermissions() {
   session.defaultSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
-    if (permission === 'fileSystem' && requestingOrigin === APP_ORIGIN) return true;
-    return false;
+    if (permission !== 'fileSystem') return false;
+    try { return new URL(requestingOrigin).origin === APP_ORIGIN; } catch (e) { return false; }
   });
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    callback(permission === 'fileSystem');
+    // Real gap closed alongside the fix above: this previously granted 'fileSystem' to ANY
+    // origin unconditionally, since the request handler doesn't get a requestingOrigin param at
+    // all -- deriving it from the requesting page's own URL closes that so it matches the same
+    // single-trusted-origin boundary the check handler (and setWindowOpenHandler below) enforce.
+    let originMatches = false;
+    try { originMatches = new URL(webContents.getURL()).origin === APP_ORIGIN; } catch (e) { /* leave false */ }
+    callback(permission === 'fileSystem' && originMatches);
   });
 }
 
