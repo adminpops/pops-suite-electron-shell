@@ -20,7 +20,7 @@
 // v0.1.0 installer shows on its next real rebuild/update.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const { app, BrowserWindow, dialog, Menu } = require('electron');
+const { app, BrowserWindow, dialog, Menu, session } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -52,6 +52,30 @@ autoUpdater.on('update-downloaded', () => {
 // PoPs Estimating) from its own module grid. (No custom vercel.json rewrite needed — Vercel's own
 // cleanUrls already serves app/hub/index.html at this exact path, same as app/cbm did.)
 const APP_URL = 'https://engine-server-5.vercel.app/app/hub';
+const APP_ORIGIN = new URL(APP_URL).origin;
+
+// Persistent File System Access permissions (added 2026-08-01, fixes the CBM/PoPs Estimating
+// folder-repick bug flagged the same day) -- Electron does NOT grant persistent File System
+// Access permissions by default, unlike real Chrome (electron/electron#41957). CBM's
+// loadDocsFolderHandle() and PoPs Estimating's wsLoadFolderHandle() both store the real
+// FileSystemDirectoryHandle in a shared IndexedDB key and call handle.queryPermission() on load --
+// the handle itself is found fine (same origin, shared IndexedDB), but without this handler
+// queryPermission() can't come back 'granted' after a real top-level navigation (Hub -> CBM ->
+// Hub -> PoPs Estimating are each a real win.loadURL() page load, not an SPA transition), so both
+// apps correctly fall back to demanding a fresh manual pick every time. Electron 37+ exposes a
+// 'fileSystem' permission type on setPermissionCheckHandler specifically to let an app opt into
+// remembering a grant across same-session navigations -- this shell was still pinned to Electron
+// 32 (bumped to 37 same change) which predates that API entirely. Scoped to this app's own single
+// trusted origin, same boundary setWindowOpenHandler below already enforces.
+function installPersistentFileSystemPermissions() {
+  session.defaultSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+    if (permission === 'fileSystem' && requestingOrigin === APP_ORIGIN) return true;
+    return false;
+  });
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(permission === 'fileSystem');
+  });
+}
 
 // Real navigation menu (added 2026-08-01, pops: "everthing needs back buttons i have to close
 // and start over") -- the shell only ever loaded a URL and left it at that, so clicking into a
@@ -240,9 +264,8 @@ function createWindow(splash) {
   // clicked from inside the shell) opens in the OS's real default browser instead of navigating
   // this window away from the real app — same reasoning as any desktop app that embeds a
   // single trusted origin.
-  const appOrigin = new URL(APP_URL).origin;
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (new URL(url).origin !== appOrigin) {
+    if (new URL(url).origin !== APP_ORIGIN) {
       require('electron').shell.openExternal(url);
       return { action: 'deny' };
     }
@@ -251,6 +274,7 @@ function createWindow(splash) {
 }
 
 app.whenReady().then(() => {
+  installPersistentFileSystemPermissions();
   const splash = createSplash();
   createWindow(splash);
   checkForUpdates();
