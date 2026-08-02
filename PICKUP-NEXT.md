@@ -4,17 +4,33 @@
 > "the first time this module has enough real history to need them"; today qualifies). Read at
 > session open, alongside `CURRENT_STATE.md`.
 
-## 🔴 TOP — Investigate CBM/PoPs Estimating folder-repick inside Electron
+## 🔴 TOP — Real click-through test: does the folder-repick fix actually hold?
 
-Pops used the redesigned flow for real in the Electron shell and had to manually pick the shared
-folder again in both CBM and PoPs Estimating, even though it was already connected (green check) at
-the Hub. Neither module's own folder code was touched this session — best-guess, UNVERIFIED root
-cause: Electron's File System Access implementation may not persist a granted directory-handle
-permission across separate full-page navigations between modules (real top-level navigations
-between different Vercel-hosted pages, not in-page SPA transitions), unlike real Chrome. Small
-real-world impact (one extra manual pick per module, once) but worth understanding properly before
-assuming it's fine. Full detail: `CURRENT_STATE.md`'s newest entry. Needs direct access to a
-running Electron session to actually debug — wasn't available this session.
+**Fixed same day (2026-08-01, next session after this file's original entry), root cause
+confirmed via Electron's own GitHub issue tracker, not guessed:** Electron doesn't grant
+persistent File System Access permissions by default at all (`electron/electron#41957`) — the
+capability didn't exist until Electron 37 (`ses.setPermissionCheckHandler`, `fileSystem` type).
+This shell was still pinned to Electron 32. Bumped to 37.10.3 (minimum viable major, not
+latest/43 — lower risk) and wired `session.defaultSession.setPermissionCheckHandler`/
+`setPermissionRequestHandler` for `'fileSystem'` in `main.js`. Committed `9ae374a`, pushed.
+
+**Verified so far:** real smoke-test launch — genuine `electron.exe` processes, correct window
+title, zero errors/crashes, `autoUpdater` unaffected by the version bump.
+
+**NOT yet verified — the actual real-world test, needs your hands:** `npm install` to pick up
+the new Electron build if you haven't already, `npm start`, pick the shared folder once, then
+navigate Hub → CBM → Hub → PoPs Estimating and confirm neither module asks you to re-pick.
+That's the one thing that proves this is actually fixed, not just theoretically correct.
+
+**Same session, real cross-module ripple worth knowing about even though it's not this repo:**
+investigating this bug surfaced two more real bugs while poking around the sibling apps —
+PoPs House had zero persistence for its own connected `clients/` folder at all (fixed, v2.7,
+`pops-suite-house` repo), and PoPs Estimating's "Create/Refresh DB Files" was silently missing
+`assy_tree.json` entirely plus had no way to seed a genuinely blank folder (fixed, v53.4, both
+`pops-suite-estimating` and `pops-suite-engine-server` repos — the fix now fetches real seed
+data from the hosted app's own `data/` folder). Neither of those needs anything from this repo
+specifically, just flagging the connection since it all traces back to the same demo-prep
+session.
 
 ## ✅ DONE — Hub key redesign pushed and confirmed live (2026-08-01)
 

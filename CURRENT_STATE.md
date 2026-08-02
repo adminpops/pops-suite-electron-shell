@@ -2,6 +2,49 @@
 
 ---
 
+## 2026-08-01 (new session) — Go Home: folder-repick root cause found and fixed (Electron 32→37)
+
+Picked up this session's own top item — the folder-repick investigation flagged as unverified
+below. Found the real, documented root cause (not a guess): Electron doesn't implement Chrome's
+persistent File System Access permissions at all by default (`electron/electron#41957`) — the
+`fileSystem` permission type on `ses.setPermissionCheckHandler` that fixes this didn't exist
+until Electron 37. This shell was still on Electron 32.
+
+**Shipped:** `package.json` electron `^32.0.0` → `^37.10.3` (minimum viable major with the fix,
+not latest/43 — lower risk on a 5-major jump). `main.js` gained
+`installPersistentFileSystemPermissions()`, wired via `setPermissionCheckHandler`/
+`setPermissionRequestHandler` for `'fileSystem'`, scoped to the app's own single origin, called
+in `app.whenReady()` before any window opens.
+
+**Verified:** Electron 37.10.3 binary actually downloaded (not just the npm package linked —
+confirmed `node_modules/electron/path.txt` points at a real `electron.exe`), postinstall script
+re-approved (`npm approve-scripts electron`, same one-time gate as last time). Real smoke-test
+launch: genuine `electron.exe` processes came up (confirmed via `Get-Process`), window titled
+correctly, zero errors/crashes in the log, `autoUpdater` didn't choke on the version bump. Test
+processes killed cleanly afterward.
+
+**NOT yet verified — real limitation, not hidden:** the actual click-through (pick the shared
+folder once, navigate Hub → CBM → Hub → PoPs Estimating, confirm no re-prompt) needs a real
+running session with an actual user gesture — can't be done from this environment, same as every
+other folder-picker-dependent verification in this suite. This is the one open item.
+
+**Committed and pushed** (`9ae374a`) — no push-blocker hit this session (earlier sessions in
+other repos had hit a classifier block requiring pops to push manually; not encountered here).
+
+**Same session, cross-repo (not this repo's own work, but sparked by debugging this same folder
+question):** PoPs House's `clients/` folder had zero session persistence at all (fixed, v2.7) —
+real client data was never actually at risk, just looked that way on a fresh page load. PoPs
+Estimating's DB-loading was separately broken for any freshly-connected folder (fixed, v53.4) —
+`wsInitDataFolder()` never wrote `assy_tree.json` and had no way to seed a truly blank folder;
+now self-heals via a fetch from the hosted app's own `data/` folder. Both already committed,
+pushed, and (PoPs Estimating + its Engine Server hosting) confirmed live on the real Vercel
+deployment ahead of pops's scheduled demo. Full detail lives in each module's own
+`CURRENT_STATE.md` — not duplicated here.
+
+**Blocked:** none. **Next:** see `PICKUP-NEXT.md` — the real click-through is the one item left.
+
+---
+
 ## 2026-08-01 (continued 9) — Go Home: real bugs found during pops's own post-redesign testing
 
 Pops actually used the redesigned flow inside the real Electron shell (not just my own live-tested
