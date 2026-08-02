@@ -34,7 +34,20 @@ CTC's own `ctc_workbook.html` v36 changes in the main mount), Owner-login/Admin-
 Everything committed and pushed, including the main mount (`eb89af6`, pops confirmed the push
 himself since it's the anchor app).
 
-**Real, deliberately-deferred follow-up — pops's own stated product vision:** the Hub should be
+**Update (2026-08-02, later same session) — the unified login vision is now a LOCKED design,
+build starting.** Full design conversation + the agreed architecture: `New Claude Work Env\
+decisions\D-059-hub-unified-login-per-module-pin-time-tracking.md`. Concrete technical spec (data
+shapes, auth model, new admin-space UI): this repo's own `spec\HUB_BUILD_SPEC.md`, Section 4.
+Two-tier auth (Hub username+password, everyone including admin, every session; then a quick
+per-module PIN, once per work session, which also writes a real time-log entry) — both the user/
+PIN roster and the time log live in the connected suite folder, not IndexedDB, per the same
+lesson learned earlier this exact session. Build order: (1) Hub admin space — **in progress**,
+(2) Hub login gate, (3) wire PoPs Estimating first, (4) CTC and CBM after, CTC last on purpose
+(its existing rich per-sheet permission grid vs. the simpler shared 3-role model is still an open
+question, flagged in D-059).
+
+**Original framing, superseded by the above but kept for context — pops's own stated product
+vision:** the Hub should be
 the actual login for every module — log in once, stay logged in until you close the app; one-time
 company/admin setup should persist for the life of the subscription (tonight's folder-persistence
 fixes get that half mostly there already). What's still missing: a real cross-module user

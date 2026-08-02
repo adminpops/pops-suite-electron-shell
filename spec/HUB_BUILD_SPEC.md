@@ -219,6 +219,79 @@ real-world folder — doesn't remotely configure anyone's machine, just removes 
 
 ---
 
+## Section 4 — Unified Login, Per-Module PIN, Time Tracking (D-059, added 2026-08-02)
+
+> Source decision: `New Claude Work Env\decisions\D-059-hub-unified-login-per-module-pin-time-
+> tracking.md` — read that first for the full verbatim design conversation; this section is the
+> synthesis, same pattern as Sections 1–3 above. Build order: this is piece 1 of D-059's 4-step
+> plan (Hub admin space first) — pieces 2–4 (Hub login gate, wiring PoPs Estimating, then CTC/CBM)
+> are separate follow-up build sessions, not built yet as of this section being written.
+
+### Data — lives in the connected suite folder (Section 1's shared-folder mechanism), not IndexedDB
+
+Real business data (who's allowed to use what, and the time-log history) has to survive across
+browsers/devices the same way jobs/clients/admin-config already got fixed to earlier the same
+session — IndexedDB is fine for pure session state (see below) but never for anything like this.
+
+```
+hub_users.json  (array, one entry per person, at the connected folder's root)
+[{
+  id:                 string   (uid, stable)
+  name:                string   (display name)
+  username:             string   (Hub login — admin-tier people only; see auth model below)
+  password_hash:          string  (PBKDF2, same real algorithm CTC already uses — don't invent a
+                                   second hashing scheme, port CTC's hashPassword())
+  is_admin:                 boolean
+  pin_by_module:               { ctc: "1234", cbm: "5678", pops_estimating: "9012" }  (per-module
+                                4-6 digit PIN, only present for modules this person is assigned)
+  modules_assigned:               ["ctc", "pops_estimating"]  (admin sets this — the actual
+                                                                authorization list)
+  created_at, updated_at:               ISO timestamps
+}]
+
+hub_time_log.json  (append-only array, at the connected folder's root)
+[{
+  user_id, user_name, module:            string
+  checked_in_at:                          ISO timestamp
+  checked_out_at:                          ISO timestamp | null  (exact trigger not yet decided —
+                                                                   D-059 flags this as open; module
+                                                                   close vs. Hub session end vs.
+                                                                   both — build-session call)
+}]
+```
+
+### Session state — IndexedDB is correct here (mirrors the existing `pops_suite_keys_v1` bridge)
+
+A lightweight `pops_suite_session_v1` IndexedDB record: `{loggedInAs: user_id, loggedInAt}`,
+tab/window-scoped intent ("until he closes" — pops's own words) even though IndexedDB technically
+persists past a tab close; the login screen re-showing is a deliberate design choice (D-059: "same
+once log then pin" applies to the admin too, every session, no special-casing), not a storage
+limitation to work around.
+
+### Auth model — two tiers, not one
+
+1. **Hub login (username + password)** — checked against `hub_users.json`'s `password_hash`.
+   Real distinction from the PIN tier below: only people the admin has explicitly given
+   `username`/`password_hash` to can log into the Hub itself at all (presumably admin-tier and
+   above — exact who-gets-a-Hub-login-vs-just-a-module-PIN policy is the admin's own call when
+   using the new admin space, not hardcoded here).
+2. **Per-module PIN** — checked against `pin_by_module[module]`, only reachable for modules listed
+   in `modules_assigned`. Asked once per module per work session (tracked via the same
+   `pops_suite_session_v1` record — add a `pinVerifiedModules: []` array, append on each
+   successful check, check before re-prompting).
+
+### New Hub admin space (UI)
+
+A new Owner/Admin-only nav item alongside the module grid (Section 3) — three real screens:
+- **People** — list of everyone in `hub_users.json`, add/edit, set Hub username+password (admin-
+  tier people) or leave blank (module-PIN-only people).
+- **Module Assignments** — per person, checkbox grid of which modules they're allowed into
+  (`modules_assigned`) + set/reset each assigned module's PIN.
+- **Time Log** — read-only table of `hub_time_log.json`, filterable by person/module/date — the
+  "accessable by the admin" requirement from D-059, not just a file nobody looks at.
+
+---
+
 ## What this spec does not decide
 
 - **Real price list** for the locked-module popup — placeholder numbers only until pops supplies
