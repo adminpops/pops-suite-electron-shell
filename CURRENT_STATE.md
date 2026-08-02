@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-08-02 (Go Home) — real folder-permission bug found+fixed via live diagnostic logging; rebuilt twice
+
+The 2026-08-01 Electron 32→37 fix below turned out to have a real bug of its own — pops hit the
+exact same "asks to re-pick the folder" symptom live, after the fix had already shipped. Rather
+than guess a third time, added a temporary file-write hook in `main.js` (forwards renderer
+`console.log`/`console-message` events to a plain Desktop text file, no DevTools needed) and had
+pops redo the exact repro. Found it in one pass: Electron reports `requestingOrigin` to
+`setPermissionCheckHandler` WITH a trailing slash (`https://engine-server-5.vercel.app/`), but
+`APP_ORIGIN` (from `new URL(APP_URL).origin`) never has one — the straight string comparison in
+`installPersistentFileSystemPermissions()` always failed. Also closed a related gap while in
+there: the permission *request* handler had no origin check at all (any origin could request
+`fileSystem` access), now scoped the same way via `webContents.getURL()`.
+
+**Rebuilt and re-signed twice this session** — once with temporary diagnostic logging to catch the
+bug, once more clean (diagnostics fully removed, confirmed via grep on the packaged `app.asar`)
+once the real cause was confirmed. The exe your desktop shortcut points at now has the real fix,
+no leftover debug code. Same diagnostic-logging technique was reused later the same session (a
+second investigation, a genuine CTC boot-sequence race — see main mount/CTC's own `CURRENT_STATE.
+md`) and found the real cause on the first attempt again.
+
+**Also this session:** a new desktop shortcut was recreated (pops had deleted the old one) pointing
+at the freshly rebuilt exe, at the real OneDrive-redirected Desktop path (confirmed via
+`[Environment]::GetFolderPath("Desktop")`, not guessed).
+
+---
+
 ## 2026-08-01 (new session) — Go Home: folder-repick root cause found and fixed (Electron 32→37)
 
 Picked up this session's own top item — the folder-repick investigation flagged as unverified

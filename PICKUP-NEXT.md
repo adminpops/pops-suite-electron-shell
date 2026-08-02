@@ -4,7 +4,35 @@
 > "the first time this module has enough real history to need them"; today qualifies). Read at
 > session open, alongside `CURRENT_STATE.md`.
 
-## 🔴 NEWEST (2026-08-02, later same session) — ✅ D-059 COMPLETE: unified Hub login, all 4 pieces shipped
+## 🔴 NEWEST (2026-08-02, Go Home) — real folder-permission bug found+fixed; PIN dropped suite-wide; real customer onboarding built
+
+Big session. **The folder-repick fix from below actually had a real bug** — not an Electron
+limitation as first assumed. Live diagnostic logging pops ran on his own machine (a temporary
+file-write hook in `main.js`, forwarding renderer console output to a plain Desktop text file)
+found it in one pass: `requestingOrigin` comes back from Electron's permission-check handler WITH a
+trailing slash, but `APP_ORIGIN` never has one — a straight string comparison always failed, so
+every `queryPermission()` check reported not-granted even seconds after a real, successful pick.
+Fixed in `main.js` by re-parsing `requestingOrigin` through `new URL()` before comparing. Rebuilt
+and re-signed twice this session (once for the fix, once more to strip the diagnostic logging back
+out afterward) — the packaged app running on this machine now has the real fix, no leftover
+debug code.
+
+**D-060/D-061/D-062** (main mount + each module's own repo) — the per-module Hub PIN got dropped
+for the hosted path entirely (pops: "it is too cumberson to work"), a real regression from an
+earlier sync got found and fixed, and a genuine CTC boot-sequence race got found (same live-
+diagnostic-logging technique) and fixed. None of these needed an Electron Shell code change, but
+the fixed apps all load through this shell.
+
+**D-063/D-064 — real customer onboarding, built same day.** Pops's own "40k view": customer buys a
+key, PoPs House sends the app link + a one-time temp password, customer logs into the Hub and sets
+their own permanent admin account. This is now real, live-tested by pops on his own machine (found
+one gap — the registry publish step — fixed same day with a direct-publish path).
+
+**Process correction, worth noting:** the note below about `git push` being classifier-blocked did
+NOT recur this session — every commit across every touched repo pushed cleanly, no manual
+hand-off needed. Keep the note as history, but don't assume it still applies without testing.
+
+## 🟡 PRIOR (2026-08-02, later same session) — ✅ D-059 COMPLETE: unified Hub login, all 4 pieces shipped
 
 Full status: main mount's `decisions\D-059-hub-unified-login-per-module-pin-time-tracking.md`.
 One Hub login + a new admin space (assign people to modules, set PINs) + a real per-module PIN
