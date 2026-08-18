@@ -1,6 +1,6 @@
 {
   "name": "pops-suite-electron-shell",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "PoPs Suite desktop app shell (D-053 layer 6). Loads the real, server-hosted app UI in a native window -- no HTML/JS ships inside this app itself, per D-052.",
   "main": "main.js",
@@ -19,9 +19,11 @@
   "build": {
     "appId": "com.popssuite.shell",
     "productName": "PoPs Suite",
+    "icon": "build/icon.png",
     "files": [
       "main.js",
       "preload.js",
+      "overlay-preload.js",
       "loading.html"
     ],
     "win": {

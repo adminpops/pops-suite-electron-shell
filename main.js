@@ -20,9 +20,15 @@
 // v0.1.0 installer shows on its next real rebuild/update.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const { app, BrowserWindow, dialog, Menu, session } = require('electron');
+const { app, BrowserWindow, dialog, Menu, session, Tray, ipcMain, screen } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
+
+// Placeholder PoPs brand-indigo icon (build/icon.png) — real branding not supplied yet, pops's own
+// call to proceed now rather than block on artwork ("i like the icon asset now keep"). Swappable
+// later: replace this one file, no other change needed (electron-builder auto-generates .ico/.icns
+// from it at build time; Tray/BrowserWindow both just point at the same PNG).
+const ICON_PATH = path.join(__dirname, 'build', 'icon.png');
 
 // Checks GitHub Releases on this repo (adminpops/pops-suite-electron-shell — public, see
 // package.json's own build.publish block) for a newer version, downloads it in the background,
@@ -53,6 +59,12 @@ autoUpdater.on('update-downloaded', () => {
 // cleanUrls already serves app/hub/index.html at this exact path, same as app/cbm did.)
 const APP_URL = 'https://engine-server-5.vercel.app/app/hub';
 const APP_ORIGIN = new URL(APP_URL).origin;
+
+// Tracked at module scope so the tray (createTray) and the fullscreen overlay
+// (createFullscreenOverlay) can both reach the one real app window without threading a reference
+// through every function that might need it.
+let mainWindow = null;
+let tray = null;
 
 // Persistent File System Access permissions (added 2026-08-01, fixes the CBM/PoPs Estimating
 // folder-repick bug flagged the same day) -- Electron does NOT grant persistent File System
@@ -126,6 +138,114 @@ function buildMenu(win) {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+// Fullscreen control-strip overlay (added 2026-08-18, D-085) -- a separate, tiny, always-on-top,
+// frameless window docked to the top-right corner of whichever display the main window is
+// fullscreen on. Not native OS chrome, so entering real fullscreen (which hides all native chrome)
+// has nothing here to hide. Shown only while win.isFullScreen() -- the real native title bar
+// already covers minimize/maximize/close the rest of the time, no need to duplicate it. Loads a
+// tiny inline data: URL (three buttons, no product content) -- same "shell chrome only, no app
+// HTML/JS ships here" boundary as the splash window and loading bar above.
+let overlayWindow = null;
+
+const OVERLAY_WIDTH = 112;
+const OVERLAY_HEIGHT = 34;
+const OVERLAY_MARGIN = 8;
+
+const OVERLAY_HTML = `<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0;background:#1c1830;overflow:hidden;-webkit-user-select:none;}
+  #bar{display:flex;height:${OVERLAY_HEIGHT}px;-webkit-app-region:drag;}
+  button{
+    -webkit-app-region:no-drag; flex:1; border:0; background:transparent; color:#e8e6f5;
+    font:14px/1 system-ui,sans-serif; cursor:pointer; display:flex; align-items:center;
+    justify-content:center;
+  }
+  button:hover{background:rgba(255,255,255,0.12);}
+  #closeBtn:hover{background:#e81123; color:#fff;}
+</style></head><body>
+  <div id="bar">
+    <button id="minBtn" title="Minimize">&#x2013;</button>
+    <button id="restoreBtn" title="Exit full screen">&#x2922;</button>
+    <button id="closeBtn" title="Close">&#x2715;</button>
+  </div>
+  <script>
+    document.getElementById('minBtn').onclick = () => window.popsOverlay.minimize();
+    document.getElementById('restoreBtn').onclick = () => window.popsOverlay.exitFullscreen();
+    document.getElementById('closeBtn').onclick = () => window.popsOverlay.close();
+  </script>
+</body></html>`;
+
+function positionOverlay(win) {
+  if (!overlayWindow) return;
+  const display = screen.getDisplayMatching(win.getBounds());
+  const x = display.bounds.x + display.bounds.width - OVERLAY_WIDTH - OVERLAY_MARGIN;
+  const y = display.bounds.y + OVERLAY_MARGIN;
+  overlayWindow.setBounds({ x, y, width: OVERLAY_WIDTH, height: OVERLAY_HEIGHT });
+}
+
+function showFullscreenOverlay(win) {
+  if (!overlayWindow) {
+    overlayWindow = new BrowserWindow({
+      width: OVERLAY_WIDTH,
+      height: OVERLAY_HEIGHT,
+      frame: false,
+      resizable: false,
+      movable: false,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      focusable: false, // never steals focus/keyboard from the real app content behind it
+      backgroundColor: '#1c1830',
+      webPreferences: {
+        preload: path.join(__dirname, 'overlay-preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true
+      }
+    });
+    overlayWindow.setAlwaysOnTop(true, 'screen-saver'); // stays above a fullscreen window on Windows
+    overlayWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(OVERLAY_HTML));
+    overlayWindow.on('closed', () => { overlayWindow = null; });
+  }
+  positionOverlay(win);
+  overlayWindow.showInactive(); // "inactive" so it never pulls keyboard focus off the real app
+}
+
+function hideFullscreenOverlay() {
+  if (overlayWindow) overlayWindow.hide();
+}
+
+ipcMain.on('overlay:minimize', () => {
+  if (!mainWindow) return;
+  // A fullscreen window won't visibly minimize on Windows until it leaves fullscreen first.
+  mainWindow.setFullScreen(false);
+  mainWindow.minimize();
+});
+ipcMain.on('overlay:exit-fullscreen', () => { if (mainWindow) mainWindow.setFullScreen(false); });
+ipcMain.on('overlay:close', () => { if (mainWindow) mainWindow.close(); });
+
+// System tray (added 2026-08-18, pops: "also need a way to drop it down in the tray") -- the app
+// keeps a persistent tray icon the whole time it's running, independent of fullscreen/minimize
+// state, as another always-available way back to the window (useful alongside the fullscreen
+// overlay above, not a replacement for it -- the overlay handles the in-fullscreen case
+// specifically, the tray handles "I minimized/lost the window and want it back" generally). Left
+// window-close behavior unchanged (still quits, per the existing window-all-closed handler below)
+// -- turning close-to-tray on is a bigger behavior change than what pops asked for here.
+function createTray() {
+  tray = new Tray(ICON_PATH);
+  tray.setToolTip('PoPs Suite');
+  const showWindow = () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  };
+  tray.on('click', showWindow);
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Show PoPs Suite', click: showWindow },
+    { type: 'separator' },
+    { label: 'Quit', click: () => app.quit() }
+  ]));
+}
+
 // Splash window (added 2026-08-01, pops: "can you build a static window while loading in
 // progress and progress bar") -- shown only for the app's cold launch, before the real Hub page
 // has ever loaded once. Loads a small local `loading.html` -- pure branding/animation, no product
@@ -142,6 +262,7 @@ function createSplash() {
     alwaysOnTop: true,
     skipTaskbar: true,
     backgroundColor: '#2f1f6b',
+    icon: ICON_PATH,
     webPreferences: { sandbox: true }
   });
   splash.loadFile(path.join(__dirname, 'loading.html'));
@@ -194,6 +315,7 @@ function createWindow(splash) {
     // (macOS 'activate' with no splash in play) just show immediately as before.
     backgroundColor: '#f4f5fa', // matches the Hub's own page background -- avoids a jarring pure-
     // white flash while the very first load is still in flight, before backgroundColor even matters
+    icon: ICON_PATH,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -201,6 +323,9 @@ function createWindow(splash) {
       sandbox: true
     }
   });
+
+  mainWindow = win;
+  win.on('closed', () => { if (mainWindow === win) mainWindow = null; });
 
   buildMenu(win);
 
@@ -251,16 +376,25 @@ function createWindow(splash) {
 
   // Escape exits fullscreen (added 2026-08-17, real bug pops hit live: "i used the view tab and
   // went full screen, and there was no way to go back, i had to use task manager and end task to
-  // get here"). Root cause: the View menu's "Toggle Full Screen" item was the only way out, but
-  // Windows hides a BrowserWindow's native menu bar while it's fullscreen -- so the one control
-  // that could exit becomes invisible the moment you enter, with no other way back. before-input-
-  // event is the same documented mechanism used for Alt+Left/Right above precisely because it
-  // fires regardless of menu-bar visibility or where focus is inside the loaded page.
+  // get here"). Kept as a convenience alongside the overlay below -- costs nothing, helps anyone
+  // who just reaches for Escape out of habit.
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type === 'keyDown' && input.key === 'Escape' && win.isFullScreen()) {
       win.setFullScreen(false);
     }
   });
+
+  // Real fix for the fullscreen dead-end (added 2026-08-18, superseding the Escape-only patch
+  // above as the primary fix -- pops confirmed live that patch never actually reached his
+  // installed copy, see decisions/D-085, but the underlying trap is real regardless: true OS
+  // fullscreen hides ALL native window chrome -- title bar, minimize/maximize/close -- on both
+  // Windows and Mac, by OS design, not something Electron can override while the window stays in
+  // that mode. Pops's own direction: "keep the fullscreen make sure title bar survives." Since no
+  // native chrome can survive real fullscreen, the fix is a small always-on-top overlay window
+  // that ISN'T native chrome -- the OS has nothing to hide.
+  win.on('enter-full-screen', () => showFullscreenOverlay(win));
+  win.on('leave-full-screen', () => hideFullscreenOverlay());
+  win.on('closed', () => hideFullscreenOverlay());
 
   // Electron does NOT give editable fields a native right-click Cut/Copy/Paste menu by default
   // (unlike a real browser) -- nothing in this file ever wired one up, so right-click did nothing
@@ -303,6 +437,7 @@ app.whenReady().then(() => {
   installPersistentFileSystemPermissions();
   const splash = createSplash();
   createWindow(splash);
+  createTray();
   checkForUpdates();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

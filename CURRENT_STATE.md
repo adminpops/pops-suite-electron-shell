@@ -2,6 +2,55 @@
 
 ---
 
+## 2026-08-18 (later same day) — D-085 built: fullscreen overlay, system tray, placeholder icon — v0.2.0, not released yet
+
+Following straight from the entry below, pops agreed to a real fix (not another hotkey patch) plus
+two new asks, then said "save state." Full decision: `decisions/D-085-fullscreen-overlay-tray-icon.md`.
+
+**Shipped (`main.js`, `overlay-preload.js` new, `package.json`, `build/icon.png` new):**
+- **Fullscreen control overlay** — a small always-on-top, frameless, non-native window (minimize /
+  exit-fullscreen / close buttons) shown only while the main window is fullscreen, docked top-right
+  of whichever display it's on. Fixes the dead-end at its root: true OS fullscreen hides all
+  *native* chrome by OS design, so the fix uses a window that isn't native chrome instead of trying
+  to keep native chrome visible (which isn't possible). Escape-key handling kept alongside it, no
+  harm in leaving it.
+- **System tray** — persistent icon while the app runs; click/"Show PoPs Suite" restores+focuses
+  the window; "Quit" added. Window-close behavior (still quits) deliberately left unchanged.
+- **Placeholder app icon** (`build/icon.png`) — no real PoPs Suite logo file exists anywhere in the
+  suite yet (checked); generated a simple brand-indigo/amber placeholder with a hand-rolled PNG
+  encoder (no image tooling available in this environment). Wired into the Tray, both
+  `BrowserWindow`s, and `package.json`'s `build.icon` for the installer. Swap the one file later
+  for real branding.
+- **Version bumped `0.1.0` → `0.2.0`** — deliberately, so this doesn't repeat the entry below's
+  mistake (a real fix that never actually reached pops's machine because nothing got released).
+
+**Real, honest gap:** syntax-verified (`node --check`, both files) and diff-reviewed clean, not
+click-tested — this environment can't launch/drive a real Electron window. **Still needs a real
+cut-and-published release (`npm run dist`) before any of this reaches pops's installed copy** —
+same root cause as the entry below, now named explicitly as the real next step, not skipped.
+
+**Not committed yet** — pops's authorization needed.
+
+---
+
+## 2026-08-18 — Escape fix confirmed NOT working live; real cause found: never actually released
+
+Pops click-tested the 2026-08-17 fix live: "escape did not work." Checked before assuming the code
+itself is wrong: `caca58b` (the fix below) IS committed to this repo — confirmed via `git log`. But
+`git tag` returns **zero tags**, and `package.json` still reads `"version": "0.1.0"` — the same
+version as before the fix. Per this module's own D-053 origin (`electron-updater` + GitHub Releases
+as the update feed), **a plain `git push` does not reach an already-installed copy** — only a
+version-bumped, published GitHub Release does. Pops's installed app was still running whatever
+build predates this fix; the code was never wrong, it just never shipped to his machine.
+
+**Real next step, not code — a release:** bump `package.json`'s version, run `npm run dist`
+(electron-builder, configured to publish to `github.com/adminpops/pops-suite-electron-shell`),
+confirm the new version reaches pops's installed copy via auto-update (or a fresh manual install),
+then re-test Escape against that real build. Not done this pass — needs pops's go-ahead, same as
+any build/publish action.
+
+---
+
 ## 2026-08-17 — real fullscreen dead-end fixed: Escape now exits
 
 Real bug pops hit live, mid CBM live-testing session: "i used the view tab and went full screen,
