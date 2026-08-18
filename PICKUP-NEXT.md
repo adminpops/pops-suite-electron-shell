@@ -4,7 +4,15 @@
 > "the first time this module has enough real history to need them"; today qualifies). Read at
 > session open, alongside `CURRENT_STATE.md`.
 
-## 🔴 NEWEST (2026-08-02, Go Home) — real folder-permission bug found+fixed; PIN dropped suite-wide; real customer onboarding built
+## 🔴 NEWEST (2026-08-17) — real fullscreen dead-end fixed (Escape now exits), not yet committed
+
+1. **Click-test live** — no way to launch/drive a real Electron window from this environment. Enter
+   fullscreen via View → Toggle Full Screen, confirm Escape exits it and the menu bar/window chrome
+   come back. Real bug pops hit: had to Task Manager → End Task to get out.
+2. **Commit + push** — `main.js` change built and syntax-verified, not yet committed. Private repo
+   `github.com/adminpops/pops-suite-electron-shell`.
+
+## 🔴 PRIOR (2026-08-02, Go Home) — real folder-permission bug found+fixed; PIN dropped suite-wide; real customer onboarding built
 
 Big session. **The folder-repick fix from below actually had a real bug** — not an Electron
 limitation as first assumed. Live diagnostic logging pops ran on his own machine (a temporary

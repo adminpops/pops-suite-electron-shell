@@ -2,6 +2,31 @@
 
 ---
 
+## 2026-08-17 — real fullscreen dead-end fixed: Escape now exits
+
+Real bug pops hit live, mid CBM live-testing session: "i used the view tab and went full screen,
+and there was no way to go back, i had to use task manager and end task to get here."
+
+**Root cause found, not guessed:** the View menu's "Toggle Full Screen" (Electron's built-in
+`togglefullscreen` role) was the only way to exit fullscreen — but Windows hides a `BrowserWindow`'s
+native menu bar while it's fullscreen, so the one control that could get you back out becomes
+invisible the moment you enter. No other exit path existed (no Escape binding, no F11 handling
+beyond whatever Electron's role default provides).
+
+**Shipped:** a second `before-input-event` listener on `win.webContents` (same documented pattern
+already used for Alt+Left/Alt+Right back/forward navigation, chosen because it fires regardless of
+menu-bar visibility or where focus is inside the loaded page) — Escape now calls
+`win.setFullScreen(false)` whenever the window is fullscreen. Syntax-verified (`node --check`) and
+diffed clean against the last commit — one file, one new listener, nothing else touched.
+
+**Real, honest gap, not hidden:** not yet click-tested live (this environment can't launch/drive a
+real Electron window) — worth confirming directly: enter fullscreen via the View menu, press
+Escape, confirm the window and menu bar both come back.
+
+**Not committed yet** — pops's authorization needed, same as any code change.
+
+---
+
 ## 2026-08-02 (Go Home) — real folder-permission bug found+fixed via live diagnostic logging; rebuilt twice
 
 The 2026-08-01 Electron 32→37 fix below turned out to have a real bug of its own — pops hit the

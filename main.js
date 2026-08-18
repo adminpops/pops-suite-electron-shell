@@ -249,6 +249,19 @@ function createWindow(splash) {
     else if (input.key === 'ArrowRight' && win.webContents.canGoForward()) win.webContents.goForward();
   });
 
+  // Escape exits fullscreen (added 2026-08-17, real bug pops hit live: "i used the view tab and
+  // went full screen, and there was no way to go back, i had to use task manager and end task to
+  // get here"). Root cause: the View menu's "Toggle Full Screen" item was the only way out, but
+  // Windows hides a BrowserWindow's native menu bar while it's fullscreen -- so the one control
+  // that could exit becomes invisible the moment you enter, with no other way back. before-input-
+  // event is the same documented mechanism used for Alt+Left/Right above precisely because it
+  // fires regardless of menu-bar visibility or where focus is inside the loaded page.
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && input.key === 'Escape' && win.isFullScreen()) {
+      win.setFullScreen(false);
+    }
+  });
+
   // Electron does NOT give editable fields a native right-click Cut/Copy/Paste menu by default
   // (unlike a real browser) -- nothing in this file ever wired one up, so right-click did nothing
   // on any text field in any app opened through this shell (Ctrl+V/Ctrl+C still worked via the
