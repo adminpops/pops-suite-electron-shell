@@ -29,7 +29,11 @@ click-tested — this environment can't launch/drive a real Electron window. **S
 cut-and-published release (`npm run dist`) before any of this reaches pops's installed copy** —
 same root cause as the entry below, now named explicitly as the real next step, not skipped.
 
-**Not committed yet** — pops's authorization needed.
+**Committed and pushed** (`4f35780`). Built locally (`npm run dist`, no GH_TOKEN/release workflow
+exists so it couldn't auto-publish) and hand-installed from `dist\PoPs Suite Setup 0.2.0.exe` since
+no publish credential was available. **Confirmed live: "fullscreen fix worked."** D-085 is closed —
+fullscreen overlay verified working on the real installed build. Tray icon and placeholder app icon
+still not explicitly confirmed, only the fullscreen piece — worth a quick follow-up check.
 
 ---
 
