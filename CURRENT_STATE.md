@@ -20,9 +20,16 @@ the rebuild step.
 drive a real installed Electron window, so the icon hasn't been visually confirmed in the taskbar/
 title bar/tray on a real installed copy — only that the build pipeline accepts it cleanly and
 produces a real, correctly-sized `.ico`. Same class of gap as the fullscreen-overlay/tray-icon
-work (D-085) — needs a real install + look to fully close. **Not committed, not released yet** —
-same as always, a version bump alone doesn't reach pops's installed copy; needs a real
-`npm run dist` + publish (or hand-install) same as every prior release.
+work (D-085) — needs a real install + look to fully close.
+
+**Committed** (`b32772b`). **Release cut same session:** confirmed `gh auth`/`GH_TOKEN` still
+unavailable in this environment (same standing limitation named in every prior release entry —
+`electron-builder`'s own `publish` block targets `github.com/adminpops/pops-suite-electron-shell`,
+but nothing here can authenticate to actually create the release). Hand-delivered the already-built
+`dist\PoPs Suite Setup 0.3.0.exe` directly to pops instead — same fallback this module has used for
+every prior version (v0.1.0, v0.2.0). **Real consequence worth knowing:** since no real GitHub
+Release/tag exists for v0.3.0, `electron-updater`'s auto-update check won't find this version —
+this has to be a fresh manual install over the existing one, not an in-app auto-update.
 
 ## 2026-08-18 (later same day) — D-085 built: fullscreen overlay, system tray, placeholder icon — v0.2.0, not released yet
 

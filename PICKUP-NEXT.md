@@ -4,18 +4,24 @@
 > "the first time this module has enough real history to need them"; today qualifies). Read at
 > session open, alongside `CURRENT_STATE.md`.
 
-## 🔴 NEWEST (2026-08-21) — v0.3.0: real icon wired in, build verified — real next step is a release
+## 🔴 NEWEST (2026-08-21) — v0.3.0 committed and hand-delivered; real next step is installing it
 
-Full detail: `CURRENT_STATE.md`'s matching entry. Real next steps:
+Full detail: `CURRENT_STATE.md`'s matching entry. No `GH_TOKEN`/`gh auth` available in this
+environment (confirmed directly, not assumed) — same standing gap this module has always had, so
+the built installer (`PoPs Suite Setup 0.3.0.exe`) was sent to pops directly rather than published.
+Real next steps:
 
-1. **Cut a real release** — `npm run dist` was already run once to verify the build (produced
-   `dist\PoPs Suite Setup 0.3.0.exe`), but per this module's own repeated lesson (the 2026-08-18
-   Escape-fix entry below), a plain build/commit does not reach pops's installed copy — needs a
-   real publish or hand-install, same as every prior version bump.
+1. **Install the hand-delivered `.exe` over the existing copy** — this will NOT show up as an
+   in-app auto-update (no real GitHub Release/tag exists for v0.3.0), so it has to be a fresh manual
+   run of the installer, same as v0.1.0/v0.2.0 before it.
 2. **Visually confirm the real icon** once installed — taskbar, title bar, and system tray should
    all show the real PoPs mark instead of the old brand-indigo placeholder. Nothing in this
    environment can drive a real installed Electron window to check this directly.
-3. **Main suite logo rollout** (separate from this) — PoPsSuite.com/favicons/other surfaces still
+3. **Real, un-scoped follow-up:** if pops wants future versions to actually auto-update again, this
+   module needs a real path to authenticate to GitHub Releases (a `GH_TOKEN` provisioned into
+   whatever environment runs the release step) — not designed or asked for, just named since it's
+   the second time this exact gap has blocked the documented update mechanism.
+4. **Main suite logo rollout** (separate from this) — PoPsSuite.com/favicons/other surfaces still
    show no logo or a text wordmark; not started, not scoped, see main mount's D-092.
 
 ## 🔴 PRIOR (2026-08-17) — real fullscreen dead-end fixed (Escape now exits), not yet committed
