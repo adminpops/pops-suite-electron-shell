@@ -2,6 +2,28 @@
 
 ---
 
+## 2026-08-21 — v0.3.0: real PoPs Suite icon wired in, replacing the placeholder (D-092)
+
+The v0.2.0 placeholder icon's own comment anticipated this exact swap: "Swappable later: replace
+this one file, no other change needed." That held true — no code change in `main.js` beyond
+updating the comment; `build/icon.png` (1254×1254, the icon-only mark locked in D-092) replaces
+the hand-rolled brand-indigo placeholder. Archived the old placeholder to
+`void/icon_placeholder_2026-08-18.png` (never delete). Version bumped `0.2.0` → `0.3.0`.
+
+**Verified with a real build, not just a file copy:** `node --check main.js` clean, then a real
+`npm run dist` — electron-builder auto-generated a proper multi-resolution `.ico` (61KB, up from
+the placeholder's own ~1KB single-size icon) from the new source with zero icon-related warnings,
+and produced a real installer, `dist\PoPs Suite Setup 0.3.0.exe`. `package-lock.json` unchanged by
+the rebuild step.
+
+**Real, honest gap, same as every prior Electron Shell change:** this environment can't launch/
+drive a real installed Electron window, so the icon hasn't been visually confirmed in the taskbar/
+title bar/tray on a real installed copy — only that the build pipeline accepts it cleanly and
+produces a real, correctly-sized `.ico`. Same class of gap as the fullscreen-overlay/tray-icon
+work (D-085) — needs a real install + look to fully close. **Not committed, not released yet** —
+same as always, a version bump alone doesn't reach pops's installed copy; needs a real
+`npm run dist` + publish (or hand-install) same as every prior release.
+
 ## 2026-08-18 (later same day) — D-085 built: fullscreen overlay, system tray, placeholder icon — v0.2.0, not released yet
 
 Following straight from the entry below, pops agreed to a real fix (not another hotkey patch) plus

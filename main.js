@@ -24,10 +24,11 @@ const { app, BrowserWindow, dialog, Menu, session, Tray, ipcMain, screen } = req
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
-// Placeholder PoPs brand-indigo icon (build/icon.png) — real branding not supplied yet, pops's own
-// call to proceed now rather than block on artwork ("i like the icon asset now keep"). Swappable
-// later: replace this one file, no other change needed (electron-builder auto-generates .ico/.icns
-// from it at build time; Tray/BrowserWindow both just point at the same PNG).
+// Real PoPs Suite icon (D-092, 2026-08-21) — replaces the brand-indigo placeholder that shipped
+// with v0.2.0. Same file, same mechanism the placeholder's own comment anticipated: swap
+// build/icon.png, no code change needed (electron-builder auto-generates .ico/.icns from it at
+// build time; Tray/BrowserWindow both just point at the same PNG). Old placeholder archived to
+// void/icon_placeholder_2026-08-18.png, never deleted.
 const ICON_PATH = path.join(__dirname, 'build', 'icon.png');
 
 // Checks GitHub Releases on this repo (adminpops/pops-suite-electron-shell — public, see
