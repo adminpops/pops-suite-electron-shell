@@ -434,17 +434,46 @@ function createWindow(splash) {
   });
 }
 
-app.whenReady().then(() => {
-  installPersistentFileSystemPermissions();
-  const splash = createSplash();
-  createWindow(splash);
-  createTray();
-  checkForUpdates();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+// Real fix (2026-08-30) -- root cause of pops's "the hub reverted to first-time setup" report,
+// confirmed directly on his own machine, not guessed: this file never called
+// requestSingleInstanceLock(), so nothing stopped two real "PoPs Suite.exe" process trees from
+// running at once against the SAME session.defaultSession user-data-dir. Confirmed live: an
+// instance from earlier that morning was still alive hours later (never cleanly quit -- a real,
+// separate, apparently rare shutdown-hang, not reproduced or root-caused this pass), and launching
+// a second instance on top of it collided on the shared IndexedDB storage -- LevelDB is
+// single-writer, so the SECOND process's indexedDB.open() calls for pops_suite_fs_v1/
+// pops_suite_keys_v1 genuinely hit the onblocked/timeout path already built into hubFolderIDB()/
+// hubKeysIDB() and silently resolved to "nothing found," which is what made a real, intact account
+// look like a fresh install. This was never actually about File System Access permissions
+// surviving a restart (a real, separate, genuine Electron limitation -- still worth the
+// requestPermission()-based reconnect fixes already shipped in the Hub itself for the case where a
+// restart really did happen cleanly) -- it was a second process stepping on the first one's lock.
+// The standard, documented Electron fix: if a second launch finds the lock already held, it quits
+// itself immediately and asks the FIRST instance to focus its own window instead of ever opening a
+// competing connection to the same storage.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
   });
-});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+  app.whenReady().then(() => {
+    installPersistentFileSystemPermissions();
+    const splash = createSplash();
+    createWindow(splash);
+    createTray();
+    checkForUpdates();
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}
