@@ -11,22 +11,23 @@
 > file before Write, even when a CLAUDE.md elsewhere claims it doesn't exist yet; that claim was
 > itself stale.
 
-## 🔴 NEWEST (2026-09-01) — v0.3.1 built (D-050 Phase 3, real OS-level secure-key bridge); two
-## real next steps, neither done yet
+## 🔴 NEWEST (2026-09-01, same day) — v0.3.1 real installer built + hand-delivered; real click-test
+## is the one thing left
 
-1. **A real release cut is owed.** `package.json` bumped `0.3.0` → `0.3.1`, source committed, but
-   nothing has been built into a real installer or reached pops's machine — same as the 0.2.0/0.3.0
-   pattern before it (`npm run dist`, hand-deliver the `.exe` since no `GH_TOKEN` exists in this
-   environment for a real GitHub Release). Needs pops's own go-ahead, same authorization gate as
-   any build/publish action.
-2. **Real click-test once a build exists:** confirm `safeStorage.isEncryptionAvailable()` actually
-   returns `true` on pops's real Windows machine, and confirm the actual recovery scenario this
-   exists for — set a real AI Source key in CBM or PoPs Estimating, force a full quit/relaunch (or
-   reproduce the real "Creating DB... since it was missing" LevelDB-recreation condition if a known
-   repro exists), confirm the key comes back via the new secure backup instead of reading "not
-   set." Full design + verification already done at the logic level (Node harness, mocked-bridge
-   browser checks) — see `CURRENT_STATE.md`'s 2026-09-01 entry; this is the one thing only a real
-   installed build on pops's own machine can confirm.
+1. ~~A real release cut is owed~~ **DONE (2026-09-01, same day)** — `PoPs Suite Setup 0.3.1.exe`
+   (94,264,017 bytes, real, not a partial) built via `npm run dist` and hand-delivered to pops (no
+   `GH_TOKEN` to publish a real GitHub Release, same standing gap every version has had). **Not an
+   in-app auto-update** — needs a fresh manual install over the existing copy, since no Release/tag
+   exists for v0.3.1. Full build narrative (two real failures, both fixed, not worked around):
+   `CURRENT_STATE.md`'s matching entry.
+2. **Real click-test, the one thing actually left:** install it, confirm `safeStorage.
+   isEncryptionAvailable()` returns `true` on pops's real Windows machine, set a real AI Source key
+   in CBM or PoPs Estimating, force a full quit/relaunch (or reproduce the real "Creating DB...
+   since it was missing" LevelDB-recreation condition if a known repro exists), confirm the key
+   comes back via the new secure backup instead of reading "not set." Full design + verification
+   already done at the logic level (Node harness, mocked-bridge browser checks) — see
+   `CURRENT_STATE.md`'s 2026-09-01 entries; this is the one thing only a real installed build on
+   pops's own machine can confirm.
 
 ## 🟡 Known, real, not urgent
 

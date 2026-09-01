@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-09-01 (same day, continued) — v0.3.1 real release cut: `PoPs Suite Setup 0.3.1.exe` built,
+## hand-delivered (no GH_TOKEN, same fallback as every prior version)
+
+Pops: "build the shell release." Real build via `npm run dist` (electron-builder 25.1.8) — took
+three attempts, both real, both fixed, not worked around:
+
+1. **First attempt failed** — `d3dcompiler_47.dll: Access is denied` while cleaning `dist\
+   win-unpacked`. Root cause found, not guessed: 4 real `PoPs Suite.exe` processes were running
+   from that exact folder (confirmed via `Get-Process` — the same folder pops's real Desktop
+   shortcut points to, per this module's own prior notes). Asked pops before touching anything
+   live, since one or more could have been his active session; confirmed, closed all 4
+   (`Stop-Process -Force`), retried.
+2. **Second attempt failed differently** — packaging succeeded this time, but NSIS's `makensis.exe`
+   hit "Can't open output file" building `PoPs Suite Setup 0.3.1.exe`, leaving a real but
+   truncated 261KB stub behind (real installers run ~94MB) plus a locked uninstaller stub — a
+   known, common Windows/antivirus transient-file-lock issue with NSIS, not a code problem.
+   Deleted both partial artifacts, retried.
+3. **Third attempt succeeded clean.** `dist\PoPs Suite Setup 0.3.1.exe`, 94,264,017 bytes — matches
+   the real size of every prior version's installer (0.1.0/0.2.0/0.3.0 all ~94MB), confirming a
+   complete build, not another partial. Signing skipped (no signing info configured — same
+   documented, accepted gap as every prior version; a real public CA cert is still deferred until
+   there's a paying customer, per this module's own `CLAUDE.md`).
+
+**Hand-delivered directly to pops** — same fallback every prior version has used, `GH_TOKEN`/
+`gh auth` still not available in this environment to publish a real GitHub Release. **Real
+consequence, same as always:** since no Release/tag exists for v0.3.1, this will not show up as an
+in-app auto-update — it needs a fresh manual install over the existing copy.
+
+**Real, honest gap, same as every prior version:** not click-tested inside a real running install
+from this environment (can't launch/drive one here) — the actual point of this release (a real
+quit/relaunch recovering a key via the new secure-storage bridge) is unconfirmed until pops
+installs and tries it. See `PICKUP-NEXT.md`'s top entry for the exact real test.
+
+---
+
 ## 2026-09-01 — v0.3.1: real OS-level secure-key bridge (D-050 Phase 3) — generic safeStorage
 ## backup/restore for CBM's and PoPs Estimating's own AI Source key
 
