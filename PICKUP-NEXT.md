@@ -1,10 +1,47 @@
-# PICKUP-NEXT — top priorities for next session
+# PICKUP-NEXT — Electron Shell (top priorities)
 
 > Created 2026-08-01 — this module didn't have this file before (its own CLAUDE.md said to add it
-> "the first time this module has enough real history to need them"; today qualifies). Read at
+> "the first time this module has enough real history to need them"; that day qualified). Read at
 > session open, alongside `CURRENT_STATE.md`.
+> **Real process correction, 2026-09-01:** this file was briefly, fully overwritten by a Write call
+> that skipped the required Read-first step — a real slip against the suite's own never-delete /
+> append-only rule. Nothing was actually lost (git history still had it, `git show HEAD:` recovered
+> it in full) and it's spliced back in below, oldest history intact, exactly where it belongs.
+> Flagging this plainly per D-100 rather than quietly fixing it — the real lesson: always read a
+> file before Write, even when a CLAUDE.md elsewhere claims it doesn't exist yet; that claim was
+> itself stale.
 
-## 🔴 NEWEST (2026-08-21) — v0.3.0 committed and hand-delivered; real next step is installing it
+## 🔴 NEWEST (2026-09-01) — v0.3.1 built (D-050 Phase 3, real OS-level secure-key bridge); two
+## real next steps, neither done yet
+
+1. **A real release cut is owed.** `package.json` bumped `0.3.0` → `0.3.1`, source committed, but
+   nothing has been built into a real installer or reached pops's machine — same as the 0.2.0/0.3.0
+   pattern before it (`npm run dist`, hand-deliver the `.exe` since no `GH_TOKEN` exists in this
+   environment for a real GitHub Release). Needs pops's own go-ahead, same authorization gate as
+   any build/publish action.
+2. **Real click-test once a build exists:** confirm `safeStorage.isEncryptionAvailable()` actually
+   returns `true` on pops's real Windows machine, and confirm the actual recovery scenario this
+   exists for — set a real AI Source key in CBM or PoPs Estimating, force a full quit/relaunch (or
+   reproduce the real "Creating DB... since it was missing" LevelDB-recreation condition if a known
+   repro exists), confirm the key comes back via the new secure backup instead of reading "not
+   set." Full design + verification already done at the logic level (Node harness, mocked-bridge
+   browser checks) — see `CURRENT_STATE.md`'s 2026-09-01 entry; this is the one thing only a real
+   installed build on pops's own machine can confirm.
+
+## 🟡 Known, real, not urgent
+
+- **This file's own `CURRENT_STATE.md` had drifted** — a real 2026-08-30 session
+  (`requestSingleInstanceLock()`, fixed a real production incident) was never logged here, only in
+  the main mount's own state files. Not backfilled yet (out of scope for the session that found
+  it) — worth a real reconciliation pass next time this module gets its own dedicated session.
+- **CTC and PoPs Estimating still aren't wrapped as their own Hub tiles the way this file's own
+  `CLAUDE.md` header implies** — that header text is itself stale (says "CBM is the pilot... CTC
+  and PoPs Estimating aren't wrapped yet"), but the real shell now loads the Hub, which already
+  reaches every hosted module including CTC/PoPs Estimating through its own module grid — worth
+  confirming this note is actually obsolete (not just the wording) next time, not assumed either
+  way from this note alone.
+
+## 🔴 PRIOR (2026-08-21) — v0.3.0 committed and hand-delivered; real next step is installing it
 
 Full detail: `CURRENT_STATE.md`'s matching entry. No `GH_TOKEN`/`gh auth` available in this
 environment (confirmed directly, not assumed) — same standing gap this module has always had, so

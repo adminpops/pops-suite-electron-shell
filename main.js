@@ -20,8 +20,9 @@
 // v0.1.0 installer shows on its next real rebuild/update.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const { app, BrowserWindow, dialog, Menu, session, Tray, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, dialog, Menu, session, Tray, ipcMain, screen, safeStorage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
 // Real PoPs Suite icon (D-092, 2026-08-21) — replaces the brand-indigo placeholder that shipped
@@ -102,6 +103,71 @@ function installPersistentFileSystemPermissions() {
     callback(permission === 'fileSystem' && originMatches);
   });
 }
+
+// Real OS-level key protection (D-050 Phase 3, added 2026-09-01) — CBM's and PoPs Estimating's own
+// AI Source config (pops_suite_ai_key_v1 / pops_estimating_ai_key_v1) is real, resold billing data
+// (a customer's BYO Anthropic key, or their pooled-mode selection tied to real purchased credits),
+// stored today as plain localStorage — vulnerable to the same real, confirmed bug named in D-050's
+// investigation (2026-09-01, PoPs Estimating): the Electron app's own Local Storage layer
+// occasionally logs "Creating DB ... since it was missing" on a full quit/relaunch and silently
+// starts a fresh, empty store, wiping whatever plain localStorage held. A real file on disk is
+// immune to that (it's a different storage subsystem entirely) — this is a generic, product-
+// agnostic backup/restore bridge: any origin-matched app running inside this shell can ask to
+// back up a named string (encrypted at rest via Electron's safeStorage, OS-keychain-backed — DPAPI
+// on Windows) and have it restored if localStorage ever comes back empty. The app side (CBM/
+// PoPs Estimating) still owns localStorage as its fast synchronous read path unchanged — this is a
+// belt-and-suspenders repair mechanism, not a replacement, so no existing synchronous
+// loadAiKeyConfig()-style call site needs to become async.
+const SECURE_KEYS_FILE = path.join(app.getPath('userData'), 'secure-keys.json');
+
+function readSecureKeysFile() {
+  try {
+    const raw = fs.readFileSync(SECURE_KEYS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object') ? parsed : {};
+  } catch (e) {
+    return {}; // missing file / first run / corrupt -- start clean, never throw
+  }
+}
+function writeSecureKeysFile(obj) {
+  fs.writeFileSync(SECURE_KEYS_FILE, JSON.stringify(obj), 'utf8');
+}
+
+// Real trust boundary, same one setWindowOpenHandler/installPersistentFileSystemPermissions above
+// already enforce: only the app's own single trusted origin may read/write secure keys, checked
+// per-call (not just at window-creation time) since a compromised/misdirected renderer could
+// otherwise ask for another product's stored key.
+function isTrustedSender(event) {
+  try { return new URL(event.senderFrame.url).origin === APP_ORIGIN; } catch (e) { return false; }
+}
+
+ipcMain.handle('secureKeys:get', (event, name) => {
+  if (!isTrustedSender(event) || typeof name !== 'string' || !name) return null;
+  if (!safeStorage.isEncryptionAvailable()) return null; // no OS keychain available -- caller falls back to localStorage-only, unchanged
+  const store = readSecureKeysFile();
+  const encoded = store[name];
+  if (!encoded) return null;
+  try {
+    return safeStorage.decryptString(Buffer.from(encoded, 'base64'));
+  } catch (e) {
+    return null; // corrupt/undecryptable entry -- never throw into the renderer, just report "nothing usable"
+  }
+});
+
+ipcMain.handle('secureKeys:set', (event, name, value) => {
+  if (!isTrustedSender(event) || typeof name !== 'string' || !name || typeof value !== 'string') {
+    return { ok: false, error: 'Invalid request.' };
+  }
+  if (!safeStorage.isEncryptionAvailable()) return { ok: false, error: 'OS-level encryption is not available on this machine.' };
+  try {
+    const store = readSecureKeysFile();
+    store[name] = safeStorage.encryptString(value).toString('base64');
+    writeSecureKeysFile(store);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
+});
 
 // Real navigation menu (added 2026-08-01, pops: "everthing needs back buttons i have to close
 // and start over") -- the shell only ever loaded a URL and left it at that, so clicking into a

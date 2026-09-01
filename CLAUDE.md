@@ -20,8 +20,9 @@ itemize per purchaser).
 Read in order, give a one-paragraph orientation, WAIT for direction:
 1. `New Claude Work Env\decisions\D-053-suite-wide-hardening-architecture.md` — full origin story
    and current state of everything this module is part of.
-2. `CURRENT_STATE.md` — what happened last session (this file).
-3. Skim `main.js`/`preload.js`/`package.json` — small enough to just read directly, no separate
+2. `CURRENT_STATE.md` — what happened last session.
+3. `PICKUP-NEXT.md` (added 2026-09-01) — top real priorities.
+4. Skim `main.js`/`preload.js`/`package.json` — small enough to just read directly, no separate
    spec file yet.
 
 ## Two Core Rules
@@ -42,7 +43,20 @@ the OS's real browser instead of navigating the shell window away.
 every other suite repo). Requires pops's authorization per commit, same as always.
 
 ## Folder layout
+> **Corrected 2026-09-01 — this whole section was stale, verified against a real directory listing
+> (`Get-ChildItem -Force`), not assumed.** The old text claimed `decisions/`/`void/`/
+> `PICKUP-NEXT.md` didn't exist yet; all three already did (PICKUP-NEXT.md since 2026-08-01,
+> decisions/ holding D-085 at minimum) — a real, if minor, instance of the same D-108 drift
+> pattern flagged suite-wide, caught here because trusting this stale claim led to a real Write-
+> without-Read overwrite of PICKUP-NEXT.md the same session (recovered from git history, see that
+> file's own header note). Lesson: verify a folder's real contents before trusting any CLAUDE.md's
+> claim about what does/doesn't exist yet, this file included.
 - `main.js` / `preload.js` / `package.json` — the whole app.
+- `CURRENT_STATE.md` / `PICKUP-NEXT.md` — state files.
+- `decisions/` — locked decisions (e.g. `D-085-fullscreen-overlay-tray-icon.md`).
+- `void/` — archive, never deleted.
+- `transcripts/`, `spec/`, `build/`, `certs/`, `dist/` — session transcripts, `HUB_BUILD_SPEC.md`,
+  build assets (icon), dev signing cert, build output — real, not verified item-by-item this pass.
 - `.github/workflows/gitleaks.yml` — secret scanning.
-- No `decisions/`, `void/`, `MEMORY.md`, `PICKUP-NEXT.md` yet — add them the first time this
-  module has enough real history to need them (per the suite's own "create if missing" pattern).
+- No `MEMORY.md` yet, confirmed by this same listing — add it the first time this module has
+  enough real history to need it.

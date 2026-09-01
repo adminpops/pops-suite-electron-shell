@@ -2,6 +2,60 @@
 
 ---
 
+## 2026-09-01 — v0.3.1: real OS-level secure-key bridge (D-050 Phase 3) — generic safeStorage
+## backup/restore for CBM's and PoPs Estimating's own AI Source key
+
+**Pointer note, real drift found this session:** this file's own newest entry (below) was still
+2026-08-21/v0.3.0 despite a real 2026-08-30 session shipping `requestSingleInstanceLock()` (fixed
+a real production incident, pops's Hub appearing to revert to first-time setup) — that work is
+documented in the main mount's own `CURRENT_STATE.md` but was never logged here, the same D-108
+drift pattern flagged suite-wide. Not backfilled this pass (out of scope for this session's actual
+task) — worth a real reconciliation next time this module gets its own dedicated session.
+
+Picked up from PoPs Estimating's D-050 investigation: its own AI Source key (a real, resold
+Anthropic-billing credential/selection, not throwaway data) sits in plain localStorage, vulnerable
+to a real, confirmed bug — the Electron app's own Local Storage layer occasionally logs "Creating
+DB ... since it was missing" on a full quit/relaunch and silently starts a fresh, empty store,
+wiping whatever localStorage held. CBM's own identical `pops_suite_ai_key_v1` key carries the same
+exposure. The plan doc (`PoPs Estimating/AI_CREDITS_BILLING_PLAN.md`) named this as Phase 3, flagged
+explicitly as "a real Electron Shell change... needs its own session in that module."
+
+**Built:** a generic, product-agnostic secure key/value bridge — `main.js` gains
+`SECURE_KEYS_FILE` (`secure-keys.json` in `app.getPath('userData')`, real file on disk, a different
+storage subsystem than the vulnerable one), `readSecureKeysFile()`/`writeSecureKeysFile()`, and two
+new IPC handlers: `secureKeys:get`/`secureKeys:set`, both origin-checked against `APP_ORIGIN` (same
+trust boundary `installPersistentFileSystemPermissions()` already enforces) before touching
+anything. Values are encrypted at rest via Electron's `safeStorage` (OS-keychain-backed — DPAPI on
+Windows) before ever reaching disk. `preload.js` exposes `window.popsSecureStorage.get(name)`/
+`.set(name,value)` via `contextBridge` — only reachable from the app's own trusted origin, matches
+the existing `contextIsolation:true`/`sandbox:true` baseline, no relaxation.
+
+**Not a replacement for localStorage** — a deliberate belt-and-suspenders design so neither CBM's
+nor PoPs Estimating's existing synchronous `loadAiKeyConfig()`-style reads needed to become async:
+each app's own `saveAiKeyConfig()` still writes localStorage first (unchanged, fast, synchronous),
+then fire-and-forget mirrors the same value into the secure file. A new boot-time check in each app
+(`estSecureKeyBootCheck()`/`cbmSecureKeyBootCheck()`) restores localStorage from the secure copy if
+it's ever found empty (the real bug this exists for) and backs up any pre-existing key that
+predates this feature. Both app-side changes shipped same session: PoPs Estimating v64.11, CBM
+v16.60.
+
+**Verified:** `node --check` clean on both `main.js`/`preload.js`; a logic-level Node harness
+(stubbing `safeStorage`/`app`/`fs`, mirroring the real handler bodies verbatim) confirmed
+get/set round-tripping, two independent product keys coexisting without cross-contamination,
+untrusted-origin senders refused, invalid args refused cleanly, and a corrupt/missing file never
+throwing — 7/7 checks passed. Each app's own restore/backup boot logic was separately exercised
+live in a browser preview with a mocked `window.popsSecureStorage`, both directions confirmed
+correct. **Not click-tested inside a real Electron window** — same standing limitation as every
+prior change in this module (this environment can't launch/drive one) — `safeStorage.
+isEncryptionAvailable()`'s real behavior on pops's actual machine, and a real full quit/relaunch
+recovering a wiped key, are both unconfirmed until he runs a real build.
+
+**Version bumped `0.3.0` → `0.3.1`.** Source committed. **Not released/published** — cutting a real
+`npm run dist` build and getting it to pops's installed copy is its own separate action, same
+authorization gate as always; flagged as the real next step, not done automatically.
+
+---
+
 ## 2026-08-21 — v0.3.0: real PoPs Suite icon wired in, replacing the placeholder (D-092)
 
 The v0.2.0 placeholder icon's own comment anticipated this exact swap: "Swappable later: replace
