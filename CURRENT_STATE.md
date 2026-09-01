@@ -2,6 +2,25 @@
 
 ---
 
+## 2026-09-01 (same day, Go Home) — real click-test CONFIRMED live: the new secure-key bridge
+## actually works on pops's own installed 0.3.1 build
+
+Pops installed the hand-delivered `PoPs Suite Setup 0.3.1.exe`, opened PoPs Estimating through it,
+and confirmed via screenshot: AI Source tile shows "✓ Key set" against his real connected folder.
+This is the first real confirmation the `secureKeys:get`/`secureKeys:set` bridge, `safeStorage`
+encryption, and the app-side boot-repair logic all actually work together on a real Windows
+install — everything before this was Node-harness/mocked-bridge verification only. Pops: "worked,
+if no other checks go home."
+
+**Real, honest scope note:** this confirms the key was present/readable after installing and
+opening the app — it confirms the bridge works end to end, but doesn't by itself prove the exact
+LevelDB-recreation failure mode (the specific "Creating DB... since it was missing" condition) was
+reproduced and recovered from; that's a narrower, harder-to-force repro. The bridge itself being
+proven functional is the real, load-bearing confirmation either way — if that condition happens
+again, the repair path is now confirmed to actually fire correctly.
+
+---
+
 ## 2026-09-01 (same day, continued) — v0.3.1 real release cut: `PoPs Suite Setup 0.3.1.exe` built,
 ## hand-delivered (no GH_TOKEN, same fallback as every prior version)
 

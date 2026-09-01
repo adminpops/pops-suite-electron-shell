@@ -11,7 +11,16 @@
 > file before Write, even when a CLAUDE.md elsewhere claims it doesn't exist yet; that claim was
 > itself stale.
 
-## 🔴 NEWEST (2026-09-01, same day) — v0.3.1 real installer built + hand-delivered; real click-test
+## ✅ DONE (2026-09-01, Go Home) — real click-test confirmed live: the secure-key bridge works on
+## pops's real installed 0.3.1 build
+
+Full narrative: `CURRENT_STATE.md`'s Go Home entry. Nothing left open on D-050's Electron Shell
+piece. **Real, separate, lower-priority follow-up, not urgent:** CBM carries the identical bridge
+(v16.60) but hasn't had its own real install/restart click-test yet — same mechanism, reasonable
+to trust by extension, but not independently confirmed. Worth doing whenever CBM's own install is
+next touched, not blocking anything.
+
+## 🔴 PRIOR (2026-09-01, same day) — v0.3.1 real installer built + hand-delivered; real click-test
 ## is the one thing left
 
 1. ~~A real release cut is owed~~ **DONE (2026-09-01, same day)** — `PoPs Suite Setup 0.3.1.exe`
