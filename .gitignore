@@ -2,3 +2,13 @@ node_modules/
 dist/
 *.log
 certs/
+
+# Internal notes, specs, transcripts and archives stay on pops's machine only (D-251, 2026-10-25). Public repo = source code only.
+/CLAUDE.md
+/CURRENT_STATE.md
+/PICKUP-NEXT.md
+/MEMORY.md
+/spec/
+/transcripts/
+/decisions/
+/void/
